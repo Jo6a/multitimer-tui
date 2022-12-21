@@ -1,9 +1,15 @@
-use chrono::*;
+use chrono::{DateTime, Local};
+use std::fs;
+use std::fs::File;
+use std::io::Read;
+//use chrono::serde::*;
 use crossterm::{
     event::{self, DisableMouseCapture, Event, KeyCode},
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
+use serde::{Deserialize, Serialize};
+use serde_json::Value;
 use std::process::Command;
 use std::{
     borrow::Borrow,
@@ -32,10 +38,34 @@ impl InputField {
     }
 }
 
+#[derive(Serialize, Deserialize)]
+struct Configuration {
+    pomodoro_time: u16,
+    pomodoro_smallbreak: u16,
+    pomodoro_bigbreak: u16,
+    timers: Vec<Timer>,
+}
+
+impl Configuration {
+    fn new(pomodoro_time: u16, pomodoro_smallbreak: u16, pomodoro_bigbreak: u16) -> Self {
+        Self {
+            pomodoro_time,
+            pomodoro_smallbreak,
+            pomodoro_bigbreak,
+            timers: Vec::new(),
+        }
+    }
+
+    fn write_to_file(&self) -> Result<(), std::io::Error> {
+        std::fs::write("config.json", serde_json::to_string_pretty(self).unwrap())
+    }
+}
+
+#[derive(Serialize, Deserialize)]
 struct Timer {
     id: u16,
     is_active: bool,
-    description: String, //&'static str,
+    description: String,
     hours: u16,
     minutes: u16,
     seconds: u16,
@@ -43,9 +73,9 @@ struct Timer {
 }
 
 impl Timer {
-    fn new(description: String, hours: u16, minutes: u16, seconds: u16) -> Self {
+    fn new(id: u16, description: String, hours: u16, minutes: u16, seconds: u16) -> Self {
         Self {
-            id: 0,
+            id,
             is_active: false,
             description,
             hours,
@@ -112,7 +142,6 @@ fn main() -> Result<(), Box<dyn Error>> {
     let mut terminal = Terminal::new(backend)?;
 
     let tick_rate = Duration::from_millis(1000);
-    //let app = App::new();
     let res = run_app(&mut terminal, tick_rate);
     disable_raw_mode()?;
 
@@ -130,7 +159,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-fn parse_input(input: &String, timers: &mut Vec<Timer>, pause_flag: &mut bool) {
+fn parse_input(input: &String, config: &mut Configuration, pause_flag: &mut bool) {
     if input.is_empty() {
         return;
     }
@@ -172,44 +201,62 @@ fn parse_input(input: &String, timers: &mut Vec<Timer>, pause_flag: &mut bool) {
                 seconds = 0;
             }
 
-            timers.push(Timer::new(argument2, hours, minutes, seconds));
+            config.timers.push(Timer::new(
+                config.timers.len() as u16,
+                argument2,
+                hours,
+                minutes,
+                seconds,
+            ));
         }
         "addp" => {
-            timers.push(Timer::new("Pomodoro-Timer".to_string(), 0, 25, 0));
-            timers.push(Timer::new("Pomodoro-Break".to_string(), 0, 5, 0));
+            config.timers.push(Timer::new(
+                config.timers.len() as u16,
+                "Pomodoro-Timer".to_string(),
+                0,
+                config.pomodoro_time,
+                0,
+            ));
+            config.timers.push(Timer::new(
+                config.timers.len() as u16,
+                "Pomodoro-Break".to_string(),
+                0,
+                config.pomodoro_smallbreak,
+                0,
+            ));
         }
         "rm" => {
             let id = argument1[..].parse::<u16>().unwrap();
-            for (i, t) in timers.iter().enumerate() {
+            for (i, t) in config.timers.iter().enumerate() {
                 if t.id == id {
-                    timers.remove(i);
+                    config.timers.remove(i);
                     break;
                 }
             }
         }
         "clear" => {
-            timers.clear();
+            config.timers.clear();
         }
         "pause" => {
             if *pause_flag == false {
-               *pause_flag = true;
+                *pause_flag = true;
             } else {
                 *pause_flag = false;
             }
         }
         "moveup" => {
             let id = argument1[..].parse::<usize>().unwrap();
-            timers.swap(id, id-1);
+            config.timers.swap(id, id - 1);
         }
         "movedown" => {
             let id = argument1[..].parse::<usize>().unwrap();
-            timers.swap(id, id+1);
+            config.timers.swap(id, id + 1);
         }
         "plus" => {
             let id = argument1[..].parse::<u16>().unwrap();
             argument2.push_str(&input[i..].to_string());
             let min = argument2[..].parse::<u16>().unwrap();
-            for t in &mut timers.into_iter() {
+            for t in &mut config.timers {
                 if t.id == id {
                     if t.minutes + min > 59 {
                         t.hours += (t.minutes + min) / 60;
@@ -225,7 +272,7 @@ fn parse_input(input: &String, timers: &mut Vec<Timer>, pause_flag: &mut bool) {
             let id = argument1[..].parse::<u16>().unwrap();
             argument2.push_str(&input[i..].to_string());
             let min = argument2[..].parse::<u16>().unwrap();
-            for t in &mut timers.into_iter() {
+            for t in &mut config.timers {
                 if t.id == id {
                     if t.minutes < min {
                         let diff = min - t.minutes;
@@ -240,33 +287,36 @@ fn parse_input(input: &String, timers: &mut Vec<Timer>, pause_flag: &mut bool) {
         }
         _ => {}
     }
-    update_timers(timers);
+    config.write_to_file();
+    update_timers(&mut config.timers);
 }
 
 fn run_app<B: Backend>(terminal: &mut Terminal<B>, tick_rate: Duration) -> io::Result<()> {
     let mut last_tick = Instant::now();
     let mut input_field = InputField::new();
-    let mut timers: Vec<Timer> = Vec::new();
+    let data = fs::read_to_string("config.json");
+    let mut config: Configuration = match data {
+        Ok(data) => serde_json::from_str(&data).unwrap_or_else(|_| Configuration::new(25, 5, 10)),
+        Err(_) => Configuration::new(25, 5, 10),
+    };
     let mut pause_flag: bool = false;
-    timers.push(Timer::new("t1".to_string(), 0, 0, 12));
-    timers.push(Timer::new("t2".to_string(), 0, 1, 0));
-    timers.push(Timer::new("t3".to_string(), 1, 0, 0));
+
     let mut i = 0;
     loop {
         if last_tick.elapsed() >= tick_rate {
             last_tick = Instant::now();
             if !pause_flag {
-                for timer in &mut timers {
+                for timer in &mut config.timers {
                     if timer.seconds != 0 || timer.minutes != 0 || timer.hours != 0 {
                         timer.tick();
                         break;
                     }
                 }
             } else {
-                update_timers(&mut timers);
-            } 
-            
-            terminal.draw(|f| ui(f, &timers, &input_field))?;
+                update_timers(&mut config.timers);
+            }
+
+            terminal.draw(|f| ui(f, &config.timers, &input_field))?;
         }
 
         let timeout = tick_rate
@@ -278,14 +328,14 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, tick_rate: Duration) -> io::R
                     return Ok(());
                 } else if let KeyCode::Enter = key.code {
                     //inp.messages.push(input_field.content.drain(..).collect());
-                    parse_input(&input_field.content, &mut timers, &mut pause_flag);
+                    parse_input(&input_field.content, &mut config, &mut pause_flag);
                     input_field.content = "add ".to_string();
                 } else if let KeyCode::Char(c) = key.code {
                     input_field.content.push(c);
                 } else if let KeyCode::Backspace = key.code {
                     input_field.content.pop();
                 }
-                terminal.draw(|f| ui(f, &timers, &input_field))?;
+                terminal.draw(|f| ui(f, &config.timers, &input_field))?;
             }
         }
         i += 1;
