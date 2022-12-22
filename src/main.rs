@@ -237,13 +237,6 @@ fn parse_input(input: &String, config: &mut Configuration, pause_flag: &mut bool
         "clear" => {
             config.timers.clear();
         }
-        "pause" => {
-            if *pause_flag == false {
-                *pause_flag = true;
-            } else {
-                *pause_flag = false;
-            }
-        }
         "moveup" => {
             let id = argument1[..].parse::<usize>().unwrap();
             config.timers.swap(id, id - 1);
@@ -329,13 +322,21 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, tick_rate: Duration) -> io::R
             .unwrap_or_else(|| Duration::from_secs(0));
         if crossterm::event::poll(timeout)? {
             if let Event::Key(key) = event::read()? {
-                if let KeyCode::Char('q') = key.code {
+                if input_field.content.is_empty() && KeyCode::Char('q') == key.code {
                     return Ok(());
+                } else if input_field.content.is_empty() && KeyCode::Char('h') == key.code {
+                    config.show_popup = !config.show_popup;
+                } else if input_field.content.is_empty() && KeyCode::Char('p') == key.code {
+                    if pause_flag == false {
+                        pause_flag = true;
+                    } else {
+                        pause_flag = false;
+                    }
+                } else if KeyCode::Esc == key.code {
+                    input_field.content.clear();
                 } else if let KeyCode::Enter = key.code {
                     parse_input(&input_field.content, &mut config, &mut pause_flag);
-                    input_field.content = "add ".to_string();
-                } else if let KeyCode::Char('h') = key.code {
-                    config.show_popup = !config.show_popup;
+                    input_field.content.clear();
                 } else if let KeyCode::Char(c) = key.code {
                     input_field.content.push(c);
                 } else if let KeyCode::Backspace = key.code {
@@ -353,21 +354,15 @@ fn ui<B: Backend>(f: &mut Frame<B>, config: &Configuration, input_field: &InputF
     let mut constraints_vec = Vec::new();
     for _ in 0..config.timers.len() {
         constraints_vec.push(Constraint::Percentage(
-            (70.0 / config.timers.len() as f32) as u16,
+            (85.0 / config.timers.len() as f32) as u16,
         ));
     }
-    constraints_vec.push(Constraint::Percentage(20));
-    constraints_vec.push(Constraint::Percentage(10));
+    constraints_vec.push(Constraint::Percentage(0));
+    constraints_vec.push(Constraint::Percentage(15));
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints(constraints_vec)
         .split(size);
-
-    let text = if config.show_popup {
-        "Press h to close the help-popup"
-    } else {
-        "Press h to show the help-popup"
-    };
 
     for i in 0..chunks.len() - 2 {
         if config.timers[i].is_active == true {
@@ -386,6 +381,16 @@ fn ui<B: Backend>(f: &mut Frame<B>, config: &Configuration, input_field: &InputF
         .style(Style::default().fg(Color::Yellow))
         .block(Block::default().borders(Borders::ALL).title("Input"));
     f.render_widget(input, chunks[chunks.len() - 1]);
+
+    let text = if !input_field.content.is_empty() {
+        "Press <ESC> to clear the input field"
+    } else if config.show_popup {
+        "Press h to close the help-popup; Press q to exit the application; Press p to pause the timers"
+    } else {
+        "Press h to show the help-popup; Press q to exit the application; Press p to pause the timers"
+    };
+
+
 
     let paragraph = Paragraph::new(Span::styled(
         text,
