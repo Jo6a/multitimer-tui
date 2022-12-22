@@ -1,15 +1,12 @@
 use chrono::{DateTime, Local};
 use std::fs;
-use std::fs::File;
-use std::io::Read;
-//use chrono::serde::*;
+
 use crossterm::{
     event::{self, DisableMouseCapture, Event, KeyCode},
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
 use std::process::Command;
 use std::{
     borrow::Borrow,
@@ -19,10 +16,10 @@ use std::{
 };
 use tui::{
     backend::{Backend, CrosstermBackend},
-    layout::{Alignment, Constraint, Direction, Layout},
+    layout::{Alignment, Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
     text::{Span, Spans},
-    widgets::{Block, Borders, Paragraph, Wrap},
+    widgets::{Block, Borders, Clear, Paragraph, Wrap},
     Frame, Terminal,
 };
 
@@ -44,6 +41,8 @@ struct Configuration {
     pomodoro_smallbreak: u16,
     pomodoro_bigbreak: u16,
     timers: Vec<Timer>,
+    #[serde(skip_serializing, skip_deserializing)]
+    show_popup: bool,
 }
 
 impl Configuration {
@@ -53,6 +52,7 @@ impl Configuration {
             pomodoro_smallbreak,
             pomodoro_bigbreak,
             timers: Vec::new(),
+            show_popup: false,
         }
     }
 
@@ -63,7 +63,9 @@ impl Configuration {
 
 #[derive(Serialize, Deserialize)]
 struct Timer {
+    #[serde(skip_serializing, skip_deserializing)]
     id: u16,
+    #[serde(skip_serializing, skip_deserializing)]
     is_active: bool,
     description: String,
     hours: u16,
@@ -73,9 +75,9 @@ struct Timer {
 }
 
 impl Timer {
-    fn new(id: u16, description: String, hours: u16, minutes: u16, seconds: u16) -> Self {
+    fn new(description: String, hours: u16, minutes: u16, seconds: u16) -> Self {
         Self {
-            id,
+            id: 0,
             is_active: false,
             description,
             hours,
@@ -201,27 +203,25 @@ fn parse_input(input: &String, config: &mut Configuration, pause_flag: &mut bool
                 seconds = 0;
             }
 
-            config.timers.push(Timer::new(
-                config.timers.len() as u16,
-                argument2,
-                hours,
-                minutes,
-                seconds,
-            ));
+            config
+                .timers
+                .push(Timer::new(argument2, hours, minutes, seconds));
         }
         "addp" => {
             config.timers.push(Timer::new(
-                config.timers.len() as u16,
                 "Pomodoro-Timer".to_string(),
                 0,
                 config.pomodoro_time,
                 0,
             ));
             config.timers.push(Timer::new(
-                config.timers.len() as u16,
                 "Pomodoro-Break".to_string(),
                 0,
-                config.pomodoro_smallbreak,
+                if !config.timers.is_empty() && config.timers.len() % 6 == 0 {
+                    config.pomodoro_bigbreak
+                } else {
+                    config.pomodoro_smallbreak
+                },
                 0,
             ));
         }
@@ -299,6 +299,7 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, tick_rate: Duration) -> io::R
         Ok(data) => serde_json::from_str(&data).unwrap_or_else(|_| Configuration::new(25, 5, 10)),
         Err(_) => Configuration::new(25, 5, 10),
     };
+    update_timers(&mut config.timers);
     let mut pause_flag: bool = false;
 
     let mut i = 0;
@@ -316,7 +317,11 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, tick_rate: Duration) -> io::R
                 update_timers(&mut config.timers);
             }
 
-            terminal.draw(|f| ui(f, &config.timers, &input_field))?;
+            terminal.draw(|f| ui(f, &config, &input_field))?;
+
+            if i % 30 == 0 {
+                config.write_to_file();
+            }
         }
 
         let timeout = tick_rate
@@ -327,41 +332,51 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, tick_rate: Duration) -> io::R
                 if let KeyCode::Char('q') = key.code {
                     return Ok(());
                 } else if let KeyCode::Enter = key.code {
-                    //inp.messages.push(input_field.content.drain(..).collect());
                     parse_input(&input_field.content, &mut config, &mut pause_flag);
                     input_field.content = "add ".to_string();
+                } else if let KeyCode::Char('h') = key.code {
+                    config.show_popup = !config.show_popup;
                 } else if let KeyCode::Char(c) = key.code {
                     input_field.content.push(c);
                 } else if let KeyCode::Backspace = key.code {
                     input_field.content.pop();
                 }
-                terminal.draw(|f| ui(f, &config.timers, &input_field))?;
+                terminal.draw(|f| ui(f, &config, &input_field))?;
             }
         }
         i += 1;
     }
 }
 
-fn ui<B: Backend>(f: &mut Frame<B>, timers: &Vec<Timer>, input_field: &InputField) {
+fn ui<B: Backend>(f: &mut Frame<B>, config: &Configuration, input_field: &InputField) {
     let size = f.size();
     let mut constraints_vec = Vec::new();
-    for _ in 0..timers.len() {
-        constraints_vec.push(Constraint::Percentage((80.0 / timers.len() as f32) as u16));
+    for _ in 0..config.timers.len() {
+        constraints_vec.push(Constraint::Percentage(
+            (70.0 / config.timers.len() as f32) as u16,
+        ));
     }
     constraints_vec.push(Constraint::Percentage(20));
+    constraints_vec.push(Constraint::Percentage(10));
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints(constraints_vec)
         .split(size);
 
-    for i in 0..chunks.len() - 1 {
-        if timers[i].is_active == true {
-            let paragraph = Paragraph::new(timers[i].formatted())
+    let text = if config.show_popup {
+        "Press h to close the help-popup"
+    } else {
+        "Press h to show the help-popup"
+    };
+
+    for i in 0..chunks.len() - 2 {
+        if config.timers[i].is_active == true {
+            let paragraph = Paragraph::new(config.timers[i].formatted())
                 .block(Block::default().borders(Borders::TOP))
                 .style(Style::default().fg(Color::LightCyan));
             f.render_widget(paragraph, chunks[i]);
         } else {
-            let paragraph = Paragraph::new(timers[i].formatted())
+            let paragraph = Paragraph::new(config.timers[i].formatted())
                 .block(Block::default().borders(Borders::TOP))
                 .style(Style::default().fg(Color::DarkGray));
             f.render_widget(paragraph, chunks[i]);
@@ -371,4 +386,49 @@ fn ui<B: Backend>(f: &mut Frame<B>, timers: &Vec<Timer>, input_field: &InputFiel
         .style(Style::default().fg(Color::Yellow))
         .block(Block::default().borders(Borders::ALL).title("Input"));
     f.render_widget(input, chunks[chunks.len() - 1]);
+
+    let paragraph = Paragraph::new(Span::styled(
+        text,
+        Style::default().add_modifier(Modifier::ITALIC),
+    ))
+    .alignment(Alignment::Center)
+    .wrap(Wrap { trim: true });
+    f.render_widget(paragraph, chunks[chunks.len() - 1]);
+
+    if config.show_popup {
+        let helptext = fs::read_to_string("helptext.txt").expect("Unable to read helptext file");
+        let paragraph = Paragraph::new(helptext)
+            .block(Block::default().borders(Borders::ALL))
+            .style(Style::default().fg(Color::LightRed));
+        let area = centered_rect(80, 50, size);
+        f.render_widget(Clear, area); //this clears out the background
+        f.render_widget(paragraph, area);
+    }
+}
+
+/// helper function to create a centered rect using up certain percentage of the available rect `r`
+fn centered_rect(percent_x: u16, percent_y: u16, r: Rect) -> Rect {
+    let popup_layout = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints(
+            [
+                Constraint::Percentage((100 - percent_y) / 2),
+                Constraint::Percentage(percent_y),
+                Constraint::Percentage((100 - percent_y) / 2),
+            ]
+            .as_ref(),
+        )
+        .split(r);
+
+    Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints(
+            [
+                Constraint::Percentage((100 - percent_x) / 2),
+                Constraint::Percentage(percent_x),
+                Constraint::Percentage((100 - percent_x) / 2),
+            ]
+            .as_ref(),
+        )
+        .split(popup_layout[1])[1]
 }
