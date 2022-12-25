@@ -68,7 +68,7 @@ impl<'a> Configuration<'a> {
             pomodoro_bigbreak,
             timers: Vec::new(),
             show_popup: false,
-            titles: vec!["Timer", "Config"],
+            titles: Vec::new(),
             index: 0,
             state: TableState::default(),
             pomodoro_time_table_str: "".to_string(),
@@ -333,6 +333,13 @@ fn parse_input(input: &String, config: &mut Configuration, pause_flag: &mut bool
         "clear" => {
             config.timers.clear();
         }
+        "move" => {
+            let id = argument1[..].parse::<usize>().unwrap();
+            argument2.push_str(&input[i..].to_string());
+            let id2 = argument2[..].parse::<usize>().unwrap();
+            let t = config.timers.remove(id);
+            config.timers.insert(id2, t);
+        }
         "moveup" => {
             let id = argument1[..].parse::<usize>().unwrap();
             config.timers.swap(id, id - 1);
@@ -388,7 +395,7 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, tick_rate: Duration) -> io::R
         Ok(data) => serde_json::from_str(&data).unwrap_or_else(|_| Configuration::new(25, 5, 10)),
         Err(_) => Configuration::new(25, 5, 10),
     };
-    config.titles = vec!["Timer", "Config"];
+    config.titles = vec!["Timer [1]", "Config [2]"];
     update_timers(&mut config.timers);
     let mut pause_flag: bool = false;
 
@@ -430,9 +437,9 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, tick_rate: Duration) -> io::R
                 } else if let KeyCode::Enter = key.code {
                     parse_input(&input_field.content, &mut config, &mut pause_flag);
                     input_field.content.clear();
-                } else if let KeyCode::Right = key.code {
+                } else if KeyCode::Right == key.code || KeyCode::Tab == key.code {
                     config.next();
-                } else if let KeyCode::Left = key.code {
+                } else if KeyCode::Left == key.code {
                     config.previous()
                 } else if let KeyCode::Char(c) = key.code {
                     input_field.content.push(c);
@@ -449,10 +456,9 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, tick_rate: Duration) -> io::R
                     config.clear_table_entry();
                 } else if let KeyCode::Enter = key.code {
                     config.save_table_changes();
-                } else if let KeyCode::Enter = key.code {
-                } else if let KeyCode::Right = key.code {
+                } else if KeyCode::Right == key.code || KeyCode::Tab == key.code {
                     config.next();
-                } else if let KeyCode::Left = key.code {
+                } else if KeyCode::Left == key.code {
                     config.previous()
                 } else if let KeyCode::Char(c) = key.code {
                     config.write_table_entry(c);
@@ -473,7 +479,13 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, tick_rate: Duration) -> io::R
 fn ui<B: Backend>(f: &mut Frame<B>, config: &mut Configuration, input_field: &InputField) {
     let size = f.size();
     let mut constraints_vec = Vec::new();
-    constraints_vec.push(Constraint::Percentage(10));
+    constraints_vec.push(Constraint::Percentage(3));
+    for _ in 0..config.timers.len() {
+        constraints_vec.push(Constraint::Percentage(
+            (92.0 / config.timers.len() as f32) as u16,
+        ));
+    }
+    constraints_vec.push(Constraint::Percentage(5));
 
     let titles = config
         .titles
@@ -487,7 +499,6 @@ fn ui<B: Backend>(f: &mut Frame<B>, config: &mut Configuration, input_field: &In
         })
         .collect();
     let tabs = Tabs::new(titles)
-        .block(Block::default().borders(Borders::ALL).title("Tabs"))
         .select(config.index)
         .style(Style::default().fg(Color::Gray))
         .highlight_style(
@@ -496,12 +507,6 @@ fn ui<B: Backend>(f: &mut Frame<B>, config: &mut Configuration, input_field: &In
                 .bg(Color::Green),
         );
 
-    for _ in 1..config.timers.len() {
-        constraints_vec.push(Constraint::Percentage(
-            (85.0 / config.timers.len() as f32) as u16,
-        ));
-    }
-    constraints_vec.push(Constraint::Percentage(5));
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints(constraints_vec)
@@ -510,9 +515,9 @@ fn ui<B: Backend>(f: &mut Frame<B>, config: &mut Configuration, input_field: &In
 
     if config.index == 0 {
         for i in 1..chunks.len() - 1 {
-            let paragraph = Paragraph::new(config.timers[i].formatted())
+            let paragraph = Paragraph::new(config.timers[i-1].formatted())
                 .block(Block::default().borders(Borders::TOP))
-                .style(Style::default().fg(if config.timers[i].is_active {
+                .style(Style::default().fg(if config.timers[i-1].is_active {
                     Color::LightCyan
                 } else {
                     Color::DarkGray
@@ -606,7 +611,7 @@ fn ui<B: Backend>(f: &mut Frame<B>, config: &mut Configuration, input_field: &In
 
         let paragraph = Paragraph::new(Span::styled(
             text,
-            Style::default().add_modifier(Modifier::ITALIC),
+            Style::default().add_modifier(Modifier::ITALIC).fg(Color::Yellow),
         ))
         .alignment(Alignment::Center)
         .wrap(Wrap { trim: true });
