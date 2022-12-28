@@ -1,5 +1,8 @@
 use chrono::{DateTime, Local};
-use std::fs;
+use std::{
+    borrow::{Borrow, BorrowMut},
+    fs,
+};
 
 use crossterm::{
     event::{self, DisableMouseCapture, Event, KeyCode},
@@ -128,7 +131,6 @@ impl<'a> Configuration<'a> {
             2 => self.pomodoro_bigbreak_table_str.clear(),
             _ => return,
         }
-        //self.items[i][1].clear();
     }
 
     pub fn write_table_entry(&mut self, c: char) {
@@ -153,7 +155,7 @@ impl<'a> Configuration<'a> {
         self.pomodoro_time = self.pomodoro_time_table_str.parse::<u16>().unwrap();
         self.pomodoro_smallbreak = self.pomodoro_smallbreak_table_str.parse::<u16>().unwrap();
         self.pomodoro_bigbreak = self.pomodoro_bigbreak_table_str.parse::<u16>().unwrap();
-        self.write_to_file();
+        self.write_to_file().unwrap();
     }
 }
 
@@ -163,6 +165,7 @@ struct Timer {
     id: u16,
     #[serde(skip_serializing, skip_deserializing)]
     is_active: bool,
+    left_view: bool,
     description: String,
     hours: u16,
     minutes: u16,
@@ -171,10 +174,11 @@ struct Timer {
 }
 
 impl Timer {
-    fn new(description: String, hours: u16, minutes: u16, seconds: u16) -> Self {
+    fn new(description: String, hours: u16, minutes: u16, seconds: u16, left_view: bool) -> Self {
         Self {
             id: 0,
             is_active: false,
+            left_view,
             description,
             hours,
             minutes,
@@ -219,17 +223,31 @@ impl Timer {
 }
 fn update_timers(timers: &mut Vec<Timer>) {
     let mut dt = Local::now();
+    let mut dt2 = Local::now();
     for (i, timer) in timers.into_iter().enumerate() {
         if timer.seconds != 0 || timer.minutes != 0 || timer.hours != 0 {
-            dt += chrono::Duration::seconds(timer.seconds as i64)
-                + chrono::Duration::minutes(timer.minutes as i64)
-                + chrono::Duration::hours(timer.hours as i64);
+            if timer.left_view {
+                dt += chrono::Duration::seconds(timer.seconds as i64)
+                    + chrono::Duration::minutes(timer.minutes as i64)
+                    + chrono::Duration::hours(timer.hours as i64);
 
-            timer.endtime = dt;
+                timer.endtime = dt;
+            } else {
+                dt2 += chrono::Duration::seconds(timer.seconds as i64)
+                    + chrono::Duration::minutes(timer.minutes as i64)
+                    + chrono::Duration::hours(timer.hours as i64);
+
+                timer.endtime = dt2;
+            }
+
             timer.id = i as u16;
             timer.is_active = false;
         }
     }
+}
+
+fn right_view_timers(timers: &Vec<Timer>) -> usize {
+    timers.iter().filter(|t| t.left_view == false).count()
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
@@ -257,7 +275,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-fn parse_input(input: &String, config: &mut Configuration, pause_flag: &mut bool) {
+fn parse_input(input: &String, config: &mut Configuration) {
     if input.is_empty() {
         return;
     }
@@ -301,7 +319,27 @@ fn parse_input(input: &String, config: &mut Configuration, pause_flag: &mut bool
 
             config
                 .timers
-                .push(Timer::new(argument2, hours, minutes, seconds));
+                .push(Timer::new(argument2, hours, minutes, seconds, true));
+        }
+        "add2" => {
+            argument2.push_str(&input[i..].to_string());
+            let hours: u16;
+            let minutes: u16;
+            let seconds: u16;
+            if argument1.len() == 8 {
+                hours = argument1[0..2].parse::<u16>().unwrap_or_default();
+                minutes = argument1[3..5].parse::<u16>().unwrap_or_default();
+                seconds = argument1[6..8].parse::<u16>().unwrap_or_default();
+            } else {
+                let min_entered = argument1[..].parse::<u16>().unwrap_or_default();
+                hours = min_entered / 60;
+                minutes = min_entered % 60;
+                seconds = 0;
+            }
+
+            config
+                .timers
+                .push(Timer::new(argument2, hours, minutes, seconds, false));
         }
         "addp" => {
             config.timers.push(Timer::new(
@@ -309,6 +347,7 @@ fn parse_input(input: &String, config: &mut Configuration, pause_flag: &mut bool
                 0,
                 config.pomodoro_time,
                 0,
+                true,
             ));
             config.timers.push(Timer::new(
                 "Pomodoro-Break".to_string(),
@@ -319,6 +358,7 @@ fn parse_input(input: &String, config: &mut Configuration, pause_flag: &mut bool
                     config.pomodoro_smallbreak
                 },
                 0,
+                true,
             ));
         }
         "rm" => {
@@ -383,7 +423,7 @@ fn parse_input(input: &String, config: &mut Configuration, pause_flag: &mut bool
         }
         _ => {}
     }
-    config.write_to_file();
+    config.write_to_file().unwrap();
     update_timers(&mut config.timers);
 }
 
@@ -397,6 +437,7 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, tick_rate: Duration) -> io::R
     };
     config.titles = vec!["Timer [1]", "Config [2]"];
     update_timers(&mut config.timers);
+
     let mut pause_flag: bool = false;
 
     let mut i = 0;
@@ -404,10 +445,21 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, tick_rate: Duration) -> io::R
         if last_tick.elapsed() >= tick_rate {
             last_tick = Instant::now();
             if !pause_flag {
+                let mut left_view_done = false;
+                let mut right_view_done = false;
                 for timer in &mut config.timers {
-                    if timer.seconds != 0 || timer.minutes != 0 || timer.hours != 0 {
+                    if timer.left_view
+                        && !left_view_done
+                        && (timer.seconds != 0 || timer.minutes != 0 || timer.hours != 0)
+                    {
                         timer.tick();
-                        break;
+                        left_view_done = true;
+                    } else if !timer.left_view
+                        && !right_view_done
+                        && (timer.seconds != 0 || timer.minutes != 0 || timer.hours != 0)
+                    {
+                        timer.tick();
+                        right_view_done = true;
                     }
                 }
             } else {
@@ -417,7 +469,7 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, tick_rate: Duration) -> io::R
             terminal.draw(|f| ui(f, &mut config, &input_field))?;
 
             if i % 30 == 0 {
-                config.write_to_file();
+                config.write_to_file().unwrap();
             }
         }
 
@@ -435,7 +487,7 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, tick_rate: Duration) -> io::R
                 } else if KeyCode::Esc == key.code {
                     input_field.content.clear();
                 } else if let KeyCode::Enter = key.code {
-                    parse_input(&input_field.content, &mut config, &mut pause_flag);
+                    parse_input(&input_field.content, &mut config);
                     input_field.content.clear();
                 } else if KeyCode::Right == key.code || KeyCode::Tab == key.code {
                     config.next();
@@ -477,15 +529,39 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, tick_rate: Duration) -> io::R
 }
 
 fn ui<B: Backend>(f: &mut Frame<B>, config: &mut Configuration, input_field: &InputField) {
-    let size = f.size();
+    let mut size = f.size();
+    let len_right_view_timers = right_view_timers(&config.timers);
+    let len_left_view_timers = config.timers.len() - len_right_view_timers;
+    let left_view_timers: Vec<&Timer> = config
+        .timers
+        .iter()
+        .filter(|t| t.left_view == true)
+        .collect();
+    let right_view_timers: Vec<&Timer> = config
+        .timers
+        .iter()
+        .filter(|t| t.left_view == false)
+        .collect();
     let mut constraints_vec = Vec::new();
+    let mut constraints_vec2 = Vec::new();
     constraints_vec.push(Constraint::Percentage(3));
-    for _ in 0..config.timers.len() {
+    for _ in 0..len_left_view_timers {
         constraints_vec.push(Constraint::Percentage(
-            (92.0 / config.timers.len() as f32) as u16,
+            (92.0 / len_left_view_timers as f32) as u16,
         ));
     }
     constraints_vec.push(Constraint::Percentage(5));
+
+    if len_right_view_timers > 0 {
+        constraints_vec2.push(Constraint::Percentage(3));
+        for _ in 0..len_right_view_timers {
+            constraints_vec2.push(Constraint::Percentage(
+                (92.0 / len_right_view_timers as f32) as u16,
+            ));
+        }
+        constraints_vec2.push(Constraint::Percentage(5));
+        size.width = size.width / 2;
+    }
 
     let titles = config
         .titles
@@ -511,18 +587,48 @@ fn ui<B: Backend>(f: &mut Frame<B>, config: &mut Configuration, input_field: &In
         .direction(Direction::Vertical)
         .constraints(constraints_vec)
         .split(size);
-    f.render_widget(tabs, chunks[0]);
+    let mut chunks2: Vec<Rect> = Vec::new();
+    if len_right_view_timers > 0 {
+        size.x = size.width;
+        chunks2 = Layout::default()
+            .direction(Direction::Vertical)
+            .constraints(constraints_vec2)
+            //.horizontal_margin(size.width)
+            .split(size);
+        f.render_widget(tabs, chunks[0]);
+    }
 
     if config.index == 0 {
+        /* loop for timers */
         for i in 1..chunks.len() - 1 {
-            let paragraph = Paragraph::new(config.timers[i-1].formatted())
-                .block(Block::default().borders(Borders::TOP))
-                .style(Style::default().fg(if config.timers[i-1].is_active {
+            let paragraph = Paragraph::new(left_view_timers[i - 1].formatted())
+                .block(Block::default().borders(
+                    Borders::TOP
+                        | if len_right_view_timers > 0 {
+                            Borders::RIGHT
+                        } else {
+                            Borders::NONE
+                        },
+                ))
+                .style(Style::default().fg(if left_view_timers[i - 1].is_active {
                     Color::LightCyan
                 } else {
                     Color::DarkGray
                 }));
             f.render_widget(paragraph, chunks[i]);
+        }
+        if len_right_view_timers > 0 {
+            /* loop for timers2 */
+            for i in 1..chunks2.len() - 1 {
+                let paragraph = Paragraph::new(right_view_timers[i - 1].formatted())
+                    .block(Block::default().borders(Borders::TOP | Borders::LEFT))
+                    .style(Style::default().fg(if right_view_timers[i - 1].is_active {
+                        Color::LightCyan
+                    } else {
+                        Color::DarkGray
+                    }));
+                f.render_widget(paragraph, chunks2[i]);
+            }
         }
         let input = Paragraph::new(input_field.content.as_ref())
             .style(Style::default().fg(Color::Yellow))
@@ -611,7 +717,9 @@ fn ui<B: Backend>(f: &mut Frame<B>, config: &mut Configuration, input_field: &In
 
         let paragraph = Paragraph::new(Span::styled(
             text,
-            Style::default().add_modifier(Modifier::ITALIC).fg(Color::Yellow),
+            Style::default()
+                .add_modifier(Modifier::ITALIC)
+                .fg(Color::Yellow),
         ))
         .alignment(Alignment::Center)
         .wrap(Wrap { trim: true });
