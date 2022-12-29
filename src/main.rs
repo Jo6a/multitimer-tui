@@ -1,8 +1,5 @@
 use chrono::{DateTime, Local};
-use std::{
-    borrow::{Borrow, BorrowMut},
-    fs,
-};
+use std::fs;
 
 use crossterm::{
     event::{self, DisableMouseCapture, Event, KeyCode},
@@ -223,7 +220,7 @@ impl Timer {
 }
 fn update_timers(timers: &mut Vec<Timer>) {
     let mut dt = Local::now();
-    let mut dt2 = Local::now();
+    let mut dt2 = dt.clone();
     for (i, timer) in timers.into_iter().enumerate() {
         if timer.seconds != 0 || timer.minutes != 0 || timer.hours != 0 {
             if timer.left_view {
@@ -246,7 +243,7 @@ fn update_timers(timers: &mut Vec<Timer>) {
     }
 }
 
-fn right_view_timers(timers: &Vec<Timer>) -> usize {
+fn num_rightview_timers(timers: &Vec<Timer>) -> usize {
     timers.iter().filter(|t| t.left_view == false).count()
 }
 
@@ -530,7 +527,7 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, tick_rate: Duration) -> io::R
 
 fn ui<B: Backend>(f: &mut Frame<B>, config: &mut Configuration, input_field: &InputField) {
     let mut size = f.size();
-    let len_right_view_timers = right_view_timers(&config.timers);
+    let len_right_view_timers = num_rightview_timers(&config.timers);
     let len_left_view_timers = config.timers.len() - len_right_view_timers;
     let left_view_timers: Vec<&Timer> = config
         .timers
@@ -560,7 +557,6 @@ fn ui<B: Backend>(f: &mut Frame<B>, config: &mut Configuration, input_field: &In
             ));
         }
         constraints_vec2.push(Constraint::Percentage(5));
-        size.width = size.width / 2;
     }
 
     let titles = config
@@ -587,15 +583,17 @@ fn ui<B: Backend>(f: &mut Frame<B>, config: &mut Configuration, input_field: &In
         .direction(Direction::Vertical)
         .constraints(constraints_vec)
         .split(size);
+    f.render_widget(tabs, chunks[0]);
     let mut chunks2: Vec<Rect> = Vec::new();
     if len_right_view_timers > 0 {
+        size.width = size.width / 2;
         size.x = size.width;
         chunks2 = Layout::default()
             .direction(Direction::Vertical)
             .constraints(constraints_vec2)
-            //.horizontal_margin(size.width)
             .split(size);
-        f.render_widget(tabs, chunks[0]);
+        size.width = size.width * 2;
+        size.x = 0;
     }
 
     if config.index == 0 {
