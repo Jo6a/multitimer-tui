@@ -1,4 +1,3 @@
-use chrono::{DateTime, Local};
 use std::fs;
 
 use crossterm::{
@@ -6,8 +5,7 @@ use crossterm::{
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
-use serde::{Deserialize, Serialize};
-use std::process::Command;
+
 use std::{
     error::Error,
     io,
@@ -18,9 +16,14 @@ use tui::{
     layout::{Alignment, Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
     text::{Span, Spans},
-    widgets::{Block, Borders, Cell, Clear, Paragraph, Row, Table, TableState, Tabs, Wrap},
+    widgets::{Block, Borders, Cell, Clear, Paragraph, Row, Table, Tabs, Wrap},
     Frame, Terminal,
 };
+
+pub mod configuration;
+
+use configuration::Configuration;
+use configuration::Timer;
 
 struct InputField {
     content: String,
@@ -32,219 +35,6 @@ impl InputField {
             content: String::new(),
         }
     }
-}
-
-#[derive(Serialize, Deserialize)]
-struct Configuration<'a> {
-    pomodoro_time: u16,
-    pomodoro_smallbreak: u16,
-    pomodoro_bigbreak: u16,
-    timers: Vec<Timer>,
-    #[serde(skip_serializing, skip_deserializing)]
-    show_popup: bool,
-    #[serde(skip_serializing, skip_deserializing)]
-    titles: Vec<&'a str>,
-    #[serde(skip_serializing, skip_deserializing)]
-    index: usize,
-    #[serde(skip_serializing, skip_deserializing)]
-    state: TableState,
-    #[serde(skip_serializing, skip_deserializing)]
-    pomodoro_time_table_str: String,
-    #[serde(skip_serializing, skip_deserializing)]
-    pomodoro_smallbreak_table_str: String,
-    #[serde(skip_serializing, skip_deserializing)]
-    pomodoro_bigbreak_table_str: String,
-}
-
-impl<'a> Configuration<'a> {
-    fn new(
-        pomodoro_time: u16,
-        pomodoro_smallbreak: u16,
-        pomodoro_bigbreak: u16,
-    ) -> Configuration<'a> {
-        Configuration {
-            pomodoro_time,
-            pomodoro_smallbreak,
-            pomodoro_bigbreak,
-            timers: Vec::new(),
-            show_popup: false,
-            titles: Vec::new(),
-            index: 0,
-            state: TableState::default(),
-            pomodoro_time_table_str: "".to_string(),
-            pomodoro_smallbreak_table_str: "".to_string(),
-            pomodoro_bigbreak_table_str: "".to_string(),
-        }
-    }
-
-    fn write_to_file(&self) -> Result<(), std::io::Error> {
-        std::fs::write("config.json", serde_json::to_string_pretty(self).unwrap())
-    }
-
-    pub fn next(&mut self) {
-        self.index = (self.index + 1) % self.titles.len();
-    }
-
-    pub fn previous(&mut self) {
-        if self.index > 0 {
-            self.index -= 1;
-        } else {
-            self.index = self.titles.len() - 1;
-        }
-    }
-
-    pub fn next_table_entry(&mut self) {
-        let i = match self.state.selected() {
-            Some(i) => {
-                if i >= 4 - 1 {
-                    0
-                } else {
-                    i + 1
-                }
-            }
-            None => 0,
-        };
-        self.state.select(Some(i));
-    }
-
-    pub fn previous_table_entry(&mut self) {
-        let i = match self.state.selected() {
-            Some(i) => {
-                if i == 0 {
-                    4 - 1
-                } else {
-                    i - 1
-                }
-            }
-            None => 0,
-        };
-        self.state.select(Some(i));
-    }
-
-    pub fn clear_table_entry(&mut self) {
-        match self.state.selected().unwrap() {
-            0 => self.pomodoro_time_table_str.clear(),
-            1 => self.pomodoro_smallbreak_table_str.clear(),
-            2 => self.pomodoro_bigbreak_table_str.clear(),
-            _ => return,
-        }
-    }
-
-    pub fn write_table_entry(&mut self, c: char) {
-        match self.state.selected().unwrap() {
-            0 => self.pomodoro_time_table_str.push(c),
-            1 => self.pomodoro_smallbreak_table_str.push(c),
-            2 => self.pomodoro_bigbreak_table_str.push(c),
-            _ => return,
-        }
-    }
-
-    pub fn pop_table_entry(&mut self) -> Option<char> {
-        match self.state.selected().unwrap() {
-            0 => self.pomodoro_time_table_str.pop(),
-            1 => self.pomodoro_smallbreak_table_str.pop(),
-            2 => self.pomodoro_bigbreak_table_str.pop(),
-            _ => return " ".to_string().pop(),
-        }
-    }
-
-    pub fn save_table_changes(&mut self) {
-        self.pomodoro_time = self.pomodoro_time_table_str.parse::<u16>().unwrap();
-        self.pomodoro_smallbreak = self.pomodoro_smallbreak_table_str.parse::<u16>().unwrap();
-        self.pomodoro_bigbreak = self.pomodoro_bigbreak_table_str.parse::<u16>().unwrap();
-        self.write_to_file().unwrap();
-    }
-}
-
-#[derive(Serialize, Deserialize)]
-struct Timer {
-    #[serde(skip_serializing, skip_deserializing)]
-    id: u16,
-    #[serde(skip_serializing, skip_deserializing)]
-    is_active: bool,
-    left_view: bool,
-    description: String,
-    hours: u16,
-    minutes: u16,
-    seconds: u16,
-    endtime: DateTime<Local>,
-}
-
-impl Timer {
-    fn new(description: String, hours: u16, minutes: u16, seconds: u16, left_view: bool) -> Self {
-        Self {
-            id: 0,
-            is_active: false,
-            left_view,
-            description,
-            hours,
-            minutes,
-            seconds,
-            endtime: Local::now(),
-        }
-    }
-
-    fn formatted(&self) -> String {
-        format!(
-            "{:02}:{:02}:{:02} ({})         @{}:{}",
-            self.hours,
-            self.minutes,
-            self.seconds,
-            self.endtime.format("%Y-%m-%d %H:%M:%S"),
-            self.id.to_string(),
-            self.description
-        )
-    }
-
-    fn tick(&mut self) {
-        self.is_active = true;
-        if self.seconds > 0 {
-            self.seconds -= 1;
-        } else if self.minutes > 0 {
-            self.minutes -= 1;
-            self.seconds = 59;
-        } else if self.hours > 0 {
-            self.hours -= 1;
-            self.minutes = 59;
-            self.seconds = 59;
-        }
-
-        if self.seconds == 0 && self.minutes == 0 && self.hours == 0 {
-            Command::new("bash")
-                .args(&["-c", "echo -e \"\\a\" "])
-                .spawn()
-                .expect("Playing sound failed");
-            self.is_active = false;
-        }
-    }
-}
-fn update_timers(timers: &mut Vec<Timer>) {
-    let mut dt = Local::now();
-    let mut dt2 = dt.clone();
-    for (i, timer) in timers.into_iter().enumerate() {
-        if timer.seconds != 0 || timer.minutes != 0 || timer.hours != 0 {
-            if timer.left_view {
-                dt += chrono::Duration::seconds(timer.seconds as i64)
-                    + chrono::Duration::minutes(timer.minutes as i64)
-                    + chrono::Duration::hours(timer.hours as i64);
-
-                timer.endtime = dt;
-            } else {
-                dt2 += chrono::Duration::seconds(timer.seconds as i64)
-                    + chrono::Duration::minutes(timer.minutes as i64)
-                    + chrono::Duration::hours(timer.hours as i64);
-
-                timer.endtime = dt2;
-            }
-
-            timer.id = i as u16;
-            timer.is_active = false;
-        }
-    }
-}
-
-fn num_rightview_timers(timers: &Vec<Timer>) -> usize {
-    timers.iter().filter(|t| t.left_view == false).count()
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
@@ -421,7 +211,7 @@ fn parse_input(input: &String, config: &mut Configuration) {
         _ => {}
     }
     config.write_to_file().unwrap();
-    update_timers(&mut config.timers);
+    configuration::update_timers(&mut config.timers);
 }
 
 fn run_app<B: Backend>(terminal: &mut Terminal<B>, tick_rate: Duration) -> io::Result<()> {
@@ -433,7 +223,7 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, tick_rate: Duration) -> io::R
         Err(_) => Configuration::new(25, 5, 10),
     };
     config.titles = vec!["Timer [1]", "Config [2]"];
-    update_timers(&mut config.timers);
+    configuration::update_timers(&mut config.timers);
 
     let mut pause_flag: bool = false;
 
@@ -460,7 +250,7 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, tick_rate: Duration) -> io::R
                     }
                 }
             } else {
-                update_timers(&mut config.timers);
+                configuration::update_timers(&mut config.timers);
             }
 
             terminal.draw(|f| ui(f, &mut config, &input_field))?;
@@ -527,7 +317,7 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, tick_rate: Duration) -> io::R
 
 fn ui<B: Backend>(f: &mut Frame<B>, config: &mut Configuration, input_field: &InputField) {
     let mut size = f.size();
-    let len_right_view_timers = num_rightview_timers(&config.timers);
+    let len_right_view_timers = configuration::num_rightview_timers(&config.timers);
     let len_left_view_timers = config.timers.len() - len_right_view_timers;
     let left_view_timers: Vec<&Timer> = config
         .timers
