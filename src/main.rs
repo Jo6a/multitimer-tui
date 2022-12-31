@@ -99,6 +99,9 @@ fn parse_input(input: &String, config: &mut Configuration) {
                 seconds = argument1[6..8].parse::<u16>().unwrap_or_default();
             } else {
                 let min_entered = argument1[..].parse::<u16>().unwrap_or_default();
+                if min_entered == 0 {
+                    argument2 = argument1; /* no argument1 with minutes entered */
+                }
                 hours = min_entered / 60;
                 minutes = min_entered % 60;
                 seconds = 0;
@@ -119,6 +122,9 @@ fn parse_input(input: &String, config: &mut Configuration) {
                 seconds = argument1[6..8].parse::<u16>().unwrap_or_default();
             } else {
                 let min_entered = argument1[..].parse::<u16>().unwrap_or_default();
+                if min_entered == 0 {
+                    argument2 = argument1; /* no argument1 with minutes entered */
+                }
                 hours = min_entered / 60;
                 minutes = min_entered % 60;
                 seconds = 0;
@@ -205,6 +211,14 @@ fn parse_input(input: &String, config: &mut Configuration) {
                         t.minutes -= min;
                     }
                     break;
+                }
+            }
+        }
+        "rename" => {
+            let id = argument1[..].parse::<u16>().unwrap();
+            for t in &mut config.timers {
+                if t.id == id {
+                    t.description = input[i..].to_string();
                 }
             }
         }
@@ -334,19 +348,19 @@ fn ui<B: Backend>(f: &mut Frame<B>, config: &mut Configuration, input_field: &In
     constraints_vec.push(Constraint::Percentage(3));
     for _ in 0..len_left_view_timers {
         constraints_vec.push(Constraint::Percentage(
-            (92.0 / len_left_view_timers as f32) as u16,
+            (90.0 / len_left_view_timers as f32) as u16,
         ));
     }
-    constraints_vec.push(Constraint::Percentage(5));
+    constraints_vec.push(Constraint::Percentage(7));
 
     if len_right_view_timers > 0 {
         constraints_vec2.push(Constraint::Percentage(3));
         for _ in 0..len_right_view_timers {
             constraints_vec2.push(Constraint::Percentage(
-                (92.0 / len_right_view_timers as f32) as u16,
+                (90.0 / len_right_view_timers as f32) as u16,
             ));
         }
-        constraints_vec2.push(Constraint::Percentage(5));
+        constraints_vec2.push(Constraint::Percentage(7));
     }
 
     let titles = config
@@ -369,14 +383,18 @@ fn ui<B: Backend>(f: &mut Frame<B>, config: &mut Configuration, input_field: &In
                 .bg(Color::Green),
         );
 
+    if len_right_view_timers > 0 {
+        size.width = size.width / 2;
+    }
+
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints(constraints_vec)
         .split(size);
     f.render_widget(tabs, chunks[0]);
+
     let mut chunks2: Vec<Rect> = Vec::new();
     if len_right_view_timers > 0 {
-        size.width = size.width / 2;
         size.x = size.width;
         chunks2 = Layout::default()
             .direction(Direction::Vertical)
@@ -390,14 +408,7 @@ fn ui<B: Backend>(f: &mut Frame<B>, config: &mut Configuration, input_field: &In
         /* loop for timers */
         for i in 1..chunks.len() - 1 {
             let paragraph = Paragraph::new(left_view_timers[i - 1].formatted())
-                .block(Block::default().borders(
-                    Borders::TOP
-                        | if len_right_view_timers > 0 {
-                            Borders::RIGHT
-                        } else {
-                            Borders::NONE
-                        },
-                ))
+                .block(Block::default().borders(Borders::TOP))
                 .style(Style::default().fg(if left_view_timers[i - 1].is_active {
                     Color::LightCyan
                 } else {

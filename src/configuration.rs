@@ -1,10 +1,8 @@
-
 pub mod timer;
-use serde::{Deserialize, Serialize};
-use tui::widgets::TableState;
 use chrono::{DateTime, Local};
+use serde::{Deserialize, Serialize};
 use std::process::Command;
-
+use tui::widgets::TableState;
 
 #[derive(Serialize, Deserialize)]
 pub struct Configuration<'a> {
@@ -214,10 +212,9 @@ pub fn update_timers(timers: &mut Vec<Timer>) {
 
                 timer.endtime = dt2;
             }
-
-            timer.id = i as u16;
-            timer.is_active = false;
         }
+        timer.id = i as u16;
+        timer.is_active = false;
     }
 }
 
