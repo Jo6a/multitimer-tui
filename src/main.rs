@@ -416,114 +416,140 @@ fn ui<B: Backend>(f: &mut Frame<B>, config: &mut Configuration, input_field: &In
                 }));
             f.render_widget(paragraph, chunks[i]);
         }
-        if len_right_view_timers > 0 {
-            /* loop for timers2 */
-            for i in 1..chunks2.len() - 1 {
-                let paragraph = Paragraph::new(right_view_timers[i - 1].formatted())
-                    .block(Block::default().borders(Borders::TOP | Borders::LEFT))
-                    .style(Style::default().fg(if right_view_timers[i - 1].is_active {
-                        Color::LightCyan
-                    } else {
-                        Color::DarkGray
-                    }));
-                f.render_widget(paragraph, chunks2[i]);
-            }
-        }
-        let input = Paragraph::new(input_field.content.as_ref())
-            .style(Style::default().fg(Color::Yellow))
-            .block(Block::default().borders(Borders::ALL).title("Input"));
-        f.render_widget(input, chunks[chunks.len() - 1]);
-
-        let text = if !input_field.content.is_empty() {
-            "Press <ESC> to clear the input field"
-        } else if config.show_popup {
-            "Press <SPACE> to pause the timers; Press h to close the help-popup; Press q to quit the application"
-        } else {
-            "Press <SPACE> to pause the timers; Press h to show the help-popup; Press q to quit the application"
-        };
-
-        let paragraph = Paragraph::new(Span::styled(
-            text,
-            Style::default().add_modifier(Modifier::ITALIC),
-        ))
-        .alignment(Alignment::Center)
-        .wrap(Wrap { trim: true });
-        f.render_widget(paragraph, chunks[chunks.len() - 1]);
-
-        if config.show_popup {
-            let helptext =
-                fs::read_to_string("helptext.txt").expect("Unable to read helptext file");
-            let paragraph = Paragraph::new(helptext)
-                .block(Block::default().borders(Borders::ALL))
-                .style(Style::default().fg(Color::LightRed));
-            let area = centered_rect(80, 50, size);
-            f.render_widget(Clear, area); //this clears out the background
-            f.render_widget(paragraph, area);
-        }
+        timertab_rendering(
+            len_right_view_timers,
+            chunks2,
+            right_view_timers,
+            f,
+            input_field,
+            &chunks,
+            config,
+            size,
+        );
     } else if config.index == 1 {
-        let selected_style = Style::default().add_modifier(Modifier::REVERSED);
-        let normal_style = Style::default().bg(Color::Green);
-        let header_cells = ["Configuration", "Value"]
-            .iter()
-            .map(|h| Cell::from(*h).style(Style::default().fg(Color::Black)));
-        let header = Row::new(header_cells)
-            .style(normal_style)
-            .height(1)
-            .bottom_margin(1);
-        if config.state.selected() == None {
-            config.pomodoro_time_table_str = config.pomodoro_time.to_string();
-            config.pomodoro_smallbreak_table_str = config.pomodoro_smallbreak.to_string();
-            config.pomodoro_bigbreak_table_str = config.pomodoro_bigbreak.to_string();
-        }
-        let items = vec![
-            vec![
-                "pomodoro_time".to_string(),
-                config.pomodoro_time_table_str.to_owned(),
-            ],
-            vec![
-                "pomodoro_smallbreak".to_string(),
-                config.pomodoro_smallbreak_table_str.to_owned(),
-            ],
-            vec![
-                "pomodoro_bigbreak".to_string(),
-                config.pomodoro_bigbreak_table_str.to_owned(),
-            ],
-        ];
-
-        let rows = items.iter().map(|item| {
-            let height = item
-                .iter()
-                .map(|content| content.chars().filter(|c| *c == '\n').count())
-                .max()
-                .unwrap_or(0)
-                + 1;
-            let cells = item.iter().map(|c| Cell::from(&c[..]));
-            Row::new(cells).height(height as u16).bottom_margin(1)
-        });
-        let t = Table::new(rows)
-            .header(header)
-            .block(Block::default().borders(Borders::ALL))
-            .highlight_style(selected_style)
-            .highlight_symbol(">> ")
-            .widths(&[
-                Constraint::Percentage(50),
-                Constraint::Length(30),
-                Constraint::Min(10),
-            ]);
-        f.render_stateful_widget(t, chunks[1], &mut config.state);
-        //* */
-        let text = "Press <ENTER> to save the configuration";
-
-        let paragraph = Paragraph::new(Span::styled(
-            text,
-            Style::default()
-                .add_modifier(Modifier::ITALIC)
-                .fg(Color::Yellow),
-        ))
-        .alignment(Alignment::Center)
-        .wrap(Wrap { trim: true });
-        f.render_widget(paragraph, chunks[chunks.len() - 1]);
+        configtab_rendering(config, f, chunks);
     }
+}
+
+fn timertab_rendering<B: Backend>(
+    len_right_view_timers: usize,
+    chunks2: Vec<Rect>,
+    right_view_timers: Vec<&Timer>,
+    f: &mut Frame<B>,
+    input_field: &InputField,
+    chunks: &Vec<Rect>,
+    config: &Configuration,
+    size: Rect,
+) {
+    if len_right_view_timers > 0 {
+        /* loop for timers2 */
+        for i in 1..chunks2.len() - 1 {
+            let paragraph = Paragraph::new(right_view_timers[i - 1].formatted())
+                .block(Block::default().borders(Borders::TOP | Borders::LEFT))
+                .style(Style::default().fg(if right_view_timers[i - 1].is_active {
+                    Color::LightCyan
+                } else {
+                    Color::DarkGray
+                }));
+            f.render_widget(paragraph, chunks2[i]);
+        }
+    }
+    let input = Paragraph::new(input_field.content.as_ref())
+        .style(Style::default().fg(Color::Yellow))
+        .block(Block::default().borders(Borders::ALL).title("Input"));
+    f.render_widget(input, chunks[chunks.len() - 1]);
+    let text = if !input_field.content.is_empty() {
+        "Press <ESC> to clear the input field"
+    } else if config.show_popup {
+        "Press <SPACE> to pause the timers; Press h to close the help-popup; Press q to quit the application"
+    } else {
+        "Press <SPACE> to pause the timers; Press h to show the help-popup; Press q to quit the application"
+    };
+    let paragraph = Paragraph::new(Span::styled(
+        text,
+        Style::default().add_modifier(Modifier::ITALIC),
+    ))
+    .alignment(Alignment::Center)
+    .wrap(Wrap { trim: true });
+    f.render_widget(paragraph, chunks[chunks.len() - 1]);
+    if config.show_popup {
+        let helptext = fs::read_to_string("helptext.txt").expect("Unable to read helptext file");
+        let paragraph = Paragraph::new(helptext)
+            .block(Block::default().borders(Borders::ALL))
+            .style(Style::default().fg(Color::LightRed));
+        let area = centered_rect(80, 50, size);
+        f.render_widget(Clear, area); //this clears out the background
+        f.render_widget(paragraph, area);
+    }
+}
+
+fn configtab_rendering<B: Backend>(
+    config: &mut Configuration,
+    f: &mut Frame<B>,
+    chunks: Vec<Rect>,
+) {
+    let selected_style = Style::default().add_modifier(Modifier::REVERSED);
+    let normal_style = Style::default().bg(Color::Green);
+    let header_cells = ["Configuration", "Value"]
+        .iter()
+        .map(|h| Cell::from(*h).style(Style::default().fg(Color::Black)));
+    let header = Row::new(header_cells)
+        .style(normal_style)
+        .height(1)
+        .bottom_margin(1);
+    if config.state.selected() == None {
+        config.pomodoro_time_table_str = config.pomodoro_time.to_string();
+        config.pomodoro_smallbreak_table_str = config.pomodoro_smallbreak.to_string();
+        config.pomodoro_bigbreak_table_str = config.pomodoro_bigbreak.to_string();
+    }
+    let items = vec![
+        vec!["reverse adding of timers".to_string(), "false".to_string()],
+        vec![
+            "pomodoro_time".to_string(),
+            config.pomodoro_time_table_str.to_owned(),
+        ],
+        vec![
+            "pomodoro_smallbreak".to_string(),
+            config.pomodoro_smallbreak_table_str.to_owned(),
+        ],
+        vec![
+            "pomodoro_bigbreak".to_string(),
+            config.pomodoro_bigbreak_table_str.to_owned(),
+        ],
+        vec!["enable dark mode".to_string(), "true".to_string()],
+    ];
+    let rows = items.iter().map(|item| {
+        let height = item
+            .iter()
+            .map(|content| content.chars().filter(|c| *c == '\n').count())
+            .max()
+            .unwrap_or(0)
+            + 1;
+        let cells = item.iter().map(|c| Cell::from(&c[..]));
+        Row::new(cells).height(height as u16).bottom_margin(1)
+    });
+    let t = Table::new(rows)
+        .header(header)
+        .block(Block::default().borders(Borders::ALL))
+        .highlight_style(selected_style)
+        .highlight_symbol(">> ")
+        .widths(&[
+            Constraint::Percentage(50),
+            Constraint::Length(30),
+            Constraint::Min(10),
+        ]);
+    f.render_stateful_widget(t, chunks[1], &mut config.state);
+    //* */
+    let text = "Press <ENTER> to save the configuration";
+    let paragraph = Paragraph::new(Span::styled(
+        text,
+        Style::default()
+            .add_modifier(Modifier::ITALIC)
+            .fg(Color::Yellow),
+    ))
+    .alignment(Alignment::Center)
+    .wrap(Wrap { trim: true });
+    f.render_widget(paragraph, chunks[chunks.len() - 1]);
 }
 
 /// helper function to create a centered rect using up certain percentage of the available rect `r`

@@ -1,4 +1,3 @@
-pub mod timer;
 use chrono::{DateTime, Local};
 use serde::{Deserialize, Serialize};
 use std::process::Command;
