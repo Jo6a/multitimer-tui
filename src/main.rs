@@ -100,7 +100,7 @@ fn parse_input(input: &String, config: &mut Configuration) {
             } else {
                 let min_entered = argument1[..].parse::<u16>().unwrap_or_default();
                 if min_entered == 0 {
-                    argument2 = argument1; /* no argument1 with minutes entered */
+                    argument2 = argument1 + " " + &argument2[..]; /* no argument1 with minutes entered */
                 }
                 hours = min_entered / 60;
                 minutes = min_entered % 60;
@@ -123,7 +123,7 @@ fn parse_input(input: &String, config: &mut Configuration) {
             } else {
                 let min_entered = argument1[..].parse::<u16>().unwrap_or_default();
                 if min_entered == 0 {
-                    argument2 = argument1; /* no argument1 with minutes entered */
+                    argument2 = argument1 + " " + &argument2[..]; /* no argument1 with minutes entered */
                 }
                 hours = min_entered / 60;
                 minutes = min_entered % 60;

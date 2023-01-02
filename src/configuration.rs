@@ -10,6 +10,8 @@ pub struct Configuration<'a> {
     pub pomodoro_bigbreak: u16,
     pub timers: Vec<Timer>,
     #[serde(skip_serializing, skip_deserializing)]
+    pub darkmode: bool,
+    #[serde(skip_serializing, skip_deserializing)]
     pub show_popup: bool,
     #[serde(skip_serializing, skip_deserializing)]
     pub titles: Vec<&'a str>,
@@ -36,6 +38,7 @@ impl<'a> Configuration<'a> {
             pomodoro_smallbreak,
             pomodoro_bigbreak,
             timers: Vec::new(),
+            darkmode: true,
             show_popup: false,
             titles: Vec::new(),
             index: 0,
