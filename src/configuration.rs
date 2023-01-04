@@ -2,15 +2,15 @@ use chrono::{DateTime, Local};
 use serde::{Deserialize, Serialize};
 use std::process::Command;
 use tui::widgets::TableState;
+use tui::style::Color;
 
 #[derive(Serialize, Deserialize)]
 pub struct Configuration<'a> {
+    pub darkmode: bool,
     pub pomodoro_time: u16,
     pub pomodoro_smallbreak: u16,
     pub pomodoro_bigbreak: u16,
     pub timers: Vec<Timer>,
-    #[serde(skip_serializing, skip_deserializing)]
-    pub darkmode: bool,
     #[serde(skip_serializing, skip_deserializing)]
     pub show_popup: bool,
     #[serde(skip_serializing, skip_deserializing)]
@@ -19,6 +19,8 @@ pub struct Configuration<'a> {
     pub index: usize,
     #[serde(skip_serializing, skip_deserializing)]
     pub state: TableState,
+    #[serde(skip_serializing, skip_deserializing)]
+    pub darkmode_str: String,
     #[serde(skip_serializing, skip_deserializing)]
     pub pomodoro_time_table_str: String,
     #[serde(skip_serializing, skip_deserializing)]
@@ -43,6 +45,7 @@ impl<'a> Configuration<'a> {
             titles: Vec::new(),
             index: 0,
             state: TableState::default(),
+            darkmode_str: "".to_string(),
             pomodoro_time_table_str: "".to_string(),
             pomodoro_smallbreak_table_str: "".to_string(),
             pomodoro_bigbreak_table_str: "".to_string(),
@@ -95,36 +98,48 @@ impl<'a> Configuration<'a> {
 
     pub fn clear_table_entry(&mut self) {
         match self.state.selected().unwrap() {
-            0 => self.pomodoro_time_table_str.clear(),
-            1 => self.pomodoro_smallbreak_table_str.clear(),
-            2 => self.pomodoro_bigbreak_table_str.clear(),
+            0 => self.darkmode_str.clear(),
+            1 => self.pomodoro_time_table_str.clear(),
+            2 => self.pomodoro_smallbreak_table_str.clear(),
+            3 => self.pomodoro_bigbreak_table_str.clear(),
             _ => return,
         }
     }
 
     pub fn write_table_entry(&mut self, c: char) {
         match self.state.selected().unwrap() {
-            0 => self.pomodoro_time_table_str.push(c),
-            1 => self.pomodoro_smallbreak_table_str.push(c),
-            2 => self.pomodoro_bigbreak_table_str.push(c),
+            0 => self.darkmode_str.push(c),
+            1 => self.pomodoro_time_table_str.push(c),
+            2 => self.pomodoro_smallbreak_table_str.push(c),
+            3 => self.pomodoro_bigbreak_table_str.push(c),
             _ => return,
         }
     }
 
     pub fn pop_table_entry(&mut self) -> Option<char> {
         match self.state.selected().unwrap() {
-            0 => self.pomodoro_time_table_str.pop(),
-            1 => self.pomodoro_smallbreak_table_str.pop(),
-            2 => self.pomodoro_bigbreak_table_str.pop(),
+            0 => self.darkmode_str.pop(),
+            1 => self.pomodoro_time_table_str.pop(),
+            2 => self.pomodoro_smallbreak_table_str.pop(),
+            3 => self.pomodoro_bigbreak_table_str.pop(),
             _ => return " ".to_string().pop(),
         }
     }
 
     pub fn save_table_changes(&mut self) {
+        self.darkmode = self.darkmode_str.parse::<bool>().unwrap_or_default();
         self.pomodoro_time = self.pomodoro_time_table_str.parse::<u16>().unwrap();
         self.pomodoro_smallbreak = self.pomodoro_smallbreak_table_str.parse::<u16>().unwrap();
         self.pomodoro_bigbreak = self.pomodoro_bigbreak_table_str.parse::<u16>().unwrap();
         self.write_to_file().unwrap();
+    }
+
+    pub fn get_background_color(self) -> Color {
+        if self.darkmode { return Color::Black; } else { return Color::White; }; 
+    }
+
+    pub fn get_foreground_color(self) -> Color {
+        if self.darkmode { return Color::White; } else { return Color::Black; }; 
     }
 }
 
