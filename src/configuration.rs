@@ -1,8 +1,8 @@
 use chrono::{DateTime, Local};
 use serde::{Deserialize, Serialize};
 use std::process::Command;
-use tui::widgets::TableState;
 use tui::style::Color;
+use tui::widgets::TableState;
 
 #[derive(Serialize, Deserialize)]
 pub struct Configuration<'a> {
@@ -135,11 +135,19 @@ impl<'a> Configuration<'a> {
     }
 
     pub fn get_background_color(self) -> Color {
-        if self.darkmode { return Color::Black; } else { return Color::White; }; 
+        if self.darkmode {
+            return Color::Black;
+        } else {
+            return Color::White;
+        };
     }
 
     pub fn get_foreground_color(self) -> Color {
-        if self.darkmode { return Color::White; } else { return Color::Black; }; 
+        if self.darkmode {
+            return Color::White;
+        } else {
+            return Color::Black;
+        };
     }
 }
 

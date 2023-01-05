@@ -331,16 +331,28 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, tick_rate: Duration) -> io::R
 }
 
 pub fn get_background_color(darkmode: bool) -> Color {
-    if darkmode { return Color::Black; } else { return Color::White; }; 
+    if darkmode {
+        return Color::Black;
+    } else {
+        return Color::White;
+    };
 }
 
 pub fn get_foreground_color(darkmode: bool) -> Color {
-    if darkmode { return Color::White; } else { return Color::Black; }; 
+    if darkmode {
+        return Color::White;
+    } else {
+        return Color::Black;
+    };
 }
 
 fn ui<B: Backend>(f: &mut Frame<B>, config: &mut Configuration, input_field: &InputField) {
     let mut size = f.size();
-    let block = Block::default().style(Style::default().fg(get_foreground_color(config.darkmode)).bg(get_background_color(config.darkmode)));
+    let block = Block::default().style(
+        Style::default()
+            .fg(get_foreground_color(config.darkmode))
+            .bg(get_background_color(config.darkmode)),
+    );
     f.render_widget(block, size);
     let len_right_view_timers = configuration::num_rightview_timers(&config.timers);
     let len_left_view_timers = config.timers.len() - len_right_view_timers;
@@ -380,18 +392,32 @@ fn ui<B: Backend>(f: &mut Frame<B>, config: &mut Configuration, input_field: &In
         .map(|t| {
             let (first, rest) = t.split_at(1);
             Spans::from(vec![
-                Span::styled(first, Style::default().fg(Color::Gray).bg(get_background_color(config.darkmode))),
-                Span::styled(rest, Style::default().fg(Color::Gray).bg(get_background_color(config.darkmode))),
+                Span::styled(
+                    first,
+                    Style::default()
+                        .fg(get_foreground_color(config.darkmode))
+                        .bg(get_background_color(config.darkmode)),
+                ),
+                Span::styled(
+                    rest,
+                    Style::default()
+                        .fg(get_foreground_color(config.darkmode))
+                        .bg(get_background_color(config.darkmode)),
+                ),
             ])
         })
         .collect();
     let tabs = Tabs::new(titles)
         .select(config.index)
-        .style(Style::default().fg(Color::Gray).bg(get_background_color(config.darkmode)))
+        .style(
+            Style::default()
+                .fg(Color::Gray)
+                .bg(get_background_color(config.darkmode)),
+        )
         .highlight_style(
             Style::default()
                 .add_modifier(Modifier::BOLD)
-                .bg(Color::Green),
+                .bg(Color::Yellow),
         );
 
     if len_right_view_timers > 0 {
@@ -404,7 +430,7 @@ fn ui<B: Backend>(f: &mut Frame<B>, config: &mut Configuration, input_field: &In
         .split(size);
     f.render_widget(tabs, chunks[0]);
 
-    let chunksRT = Layout::default()
+    let chunks_index1 = Layout::default()
         .direction(Direction::Vertical)
         .constraints(vec![Constraint::Percentage(3), Constraint::Percentage(80)])
         .split(size);
@@ -425,11 +451,15 @@ fn ui<B: Backend>(f: &mut Frame<B>, config: &mut Configuration, input_field: &In
         for i in 1..chunks.len() - 1 {
             let paragraph = Paragraph::new(left_view_timers[i - 1].formatted())
                 .block(Block::default().borders(Borders::TOP))
-                .style(Style::default().fg(if left_view_timers[i - 1].is_active {
-                    Color::LightCyan
-                } else {
-                    Color::DarkGray
-                }).bg(get_background_color(config.darkmode)));
+                .style(
+                    Style::default()
+                        .fg(if left_view_timers[i - 1].is_active {
+                            Color::Yellow
+                        } else {
+                            Color::DarkGray
+                        })
+                        .bg(get_background_color(config.darkmode)),
+                );
             f.render_widget(paragraph, chunks[i]);
         }
         timertab_rendering(
@@ -443,7 +473,7 @@ fn ui<B: Backend>(f: &mut Frame<B>, config: &mut Configuration, input_field: &In
             size,
         );
     } else if config.index == 1 {
-        configtab_rendering(config, f, chunksRT);
+        configtab_rendering(config, f, chunks_index1);
     }
 }
 
@@ -462,16 +492,24 @@ fn timertab_rendering<B: Backend>(
         for i in 1..chunks2.len() - 1 {
             let paragraph = Paragraph::new(right_view_timers[i - 1].formatted())
                 .block(Block::default().borders(Borders::TOP | Borders::LEFT))
-                .style(Style::default().fg(if right_view_timers[i - 1].is_active {
-                    Color::LightCyan
-                } else {
-                    Color::DarkGray
-                }).bg(get_background_color(config.darkmode)));
+                .style(
+                    Style::default()
+                        .fg(if right_view_timers[i - 1].is_active {
+                            Color::Yellow
+                        } else {
+                            Color::DarkGray
+                        })
+                        .bg(get_background_color(config.darkmode)),
+                );
             f.render_widget(paragraph, chunks2[i]);
         }
     }
     let input = Paragraph::new(input_field.content.as_ref())
-        .style(Style::default().fg(Color::Yellow).bg(get_background_color(config.darkmode)))
+        .style(
+            Style::default()
+                .fg(Color::Yellow)
+                .bg(get_background_color(config.darkmode)),
+        )
         .block(Block::default().borders(Borders::ALL).title("Input"));
     f.render_widget(input, chunks[chunks.len() - 1]);
     let text = if !input_field.content.is_empty() {
@@ -492,7 +530,11 @@ fn timertab_rendering<B: Backend>(
         let helptext = fs::read_to_string("helptext.txt").expect("Unable to read helptext file");
         let paragraph = Paragraph::new(helptext)
             .block(Block::default().borders(Borders::ALL))
-            .style(Style::default().fg(Color::LightRed).bg(get_background_color(config.darkmode)));
+            .style(
+                Style::default()
+                    .fg(Color::LightRed)
+                    .bg(get_background_color(config.darkmode)),
+            );
         let area = centered_rect(80, 50, size);
         f.render_widget(Clear, area); //this clears out the background
         f.render_widget(paragraph, area);
@@ -505,14 +547,16 @@ fn configtab_rendering<B: Backend>(
     chunks: Vec<Rect>,
 ) {
     let selected_style = Style::default().add_modifier(Modifier::REVERSED);
-    let normal_style = Style::default().bg(Color::Green);
-    let header_cells = ["Configuration", "Value"]
-        .iter()
-        .map(|h| Cell::from(*h).style(Style::default().fg(get_foreground_color(config.darkmode)).bg(get_background_color(config.darkmode))));
+    let header_cells = ["Configuration", "Value"].iter().map(|h| {
+        Cell::from(*h).style(
+            Style::default()
+                .fg(get_foreground_color(config.darkmode)),
+        )
+    });
     let header = Row::new(header_cells)
-        .style(normal_style)
+        .style(Style::default().bg(Color::Yellow))
         .height(1)
-        .bottom_margin(1);
+        .bottom_margin(2);
     if config.state.selected() == None {
         config.darkmode_str = config.darkmode.to_string();
         config.pomodoro_time_table_str = config.pomodoro_time.to_string();
@@ -521,10 +565,7 @@ fn configtab_rendering<B: Backend>(
     }
     let items = vec![
         //vec!["reverse adding of timers".to_string(), "false".to_string()],
-        vec![
-            "darkmode".to_string(),
-            config.darkmode_str.to_owned(),
-        ],
+        vec!["darkmode".to_string(), config.darkmode_str.to_owned()],
         vec![
             "pomodoro_time".to_string(),
             config.pomodoro_time_table_str.to_owned(),
@@ -537,7 +578,6 @@ fn configtab_rendering<B: Backend>(
             "pomodoro_bigbreak".to_string(),
             config.pomodoro_bigbreak_table_str.to_owned(),
         ],
-        //vec!["enable dark mode".to_string(), "true".to_string()],
     ];
     let rows = items.iter().map(|item| {
         let height = item
