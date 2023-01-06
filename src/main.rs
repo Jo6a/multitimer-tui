@@ -107,9 +107,12 @@ fn parse_input(input: &String, config: &mut Configuration) {
                 seconds = 0;
             }
 
-            config
-                .timers
-                .push(Timer::new(argument2, seconds + minutes * 60 + hours * 3600, true));
+            let timer = Timer::new(argument2, seconds + minutes * 60 + hours * 3600, true);
+            if config.reverseadding {
+                config.timers.insert(0, timer)
+            } else {
+                config.timers.push(timer);
+            }
         }
         "add2" => {
             argument2.push_str(&input[i..].to_string());
@@ -130,17 +133,20 @@ fn parse_input(input: &String, config: &mut Configuration) {
                 seconds = 0;
             }
 
-            config
-                .timers
-                .push(Timer::new(argument2, seconds + minutes * 60 + hours * 3600, false));
+            let timer = Timer::new(argument2, seconds + minutes * 60 + hours * 3600, false);
+            if config.reverseadding {
+                config.timers.insert(0, timer)
+            } else {
+                config.timers.push(timer);
+            }
         }
         "addp" => {
-            config.timers.push(Timer::new(
+            let timer1 = Timer::new(
                 "Pomodoro-Timer".to_string(),
                 config.pomodoro_time * 60,
                 true,
-            ));
-            config.timers.push(Timer::new(
+            );
+            let timer2 = Timer::new(
                 "Pomodoro-Break".to_string(),
                 if !config.timers.is_empty() && config.timers.len() % 6 == 0 {
                     config.pomodoro_bigbreak * 60
@@ -148,7 +154,15 @@ fn parse_input(input: &String, config: &mut Configuration) {
                     config.pomodoro_smallbreak * 60
                 },
                 true,
-            ));
+            );
+
+            if config.reverseadding {
+                config.timers.insert(0, timer1);
+                config.timers.insert(1, timer2);
+            } else {
+                config.timers.push(timer1);
+                config.timers.push(timer2);
+            }
         }
         "rm" => {
             let id = argument1[..].parse::<u16>().unwrap();
@@ -239,16 +253,10 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, tick_rate: Duration) -> io::R
                 let mut left_view_done = false;
                 let mut right_view_done = false;
                 for timer in &mut config.timers {
-                    if timer.left_view
-                        && !left_view_done
-                        && timer.timeleft_secs != 0
-                    {
+                    if timer.left_view && !left_view_done && timer.timeleft_secs != 0 {
                         timer.tick();
                         left_view_done = true;
-                    } else if !timer.left_view
-                        && !right_view_done
-                        && timer.timeleft_secs != 0
-                    {
+                    } else if !timer.left_view && !right_view_done && timer.timeleft_secs != 0 {
                         timer.tick();
                         right_view_done = true;
                     }
@@ -536,25 +544,26 @@ fn configtab_rendering<B: Backend>(
     chunks: Vec<Rect>,
 ) {
     let selected_style = Style::default().add_modifier(Modifier::REVERSED);
-    let header_cells = ["Configuration", "Value"].iter().map(|h| {
-        Cell::from(*h).style(
-            Style::default()
-                .fg(get_foreground_color(config.darkmode)),
-        )
-    });
+    let header_cells = ["Configuration", "Value"]
+        .iter()
+        .map(|h| Cell::from(*h).style(Style::default().fg(get_foreground_color(config.darkmode))));
     let header = Row::new(header_cells)
         .style(Style::default().bg(Color::Yellow))
         .height(1)
         .bottom_margin(2);
     if config.state.selected() == None {
         config.darkmode_str = config.darkmode.to_string();
+        config.reverseadding_str = config.reverseadding.to_string();
         config.pomodoro_time_table_str = config.pomodoro_time.to_string();
         config.pomodoro_smallbreak_table_str = config.pomodoro_smallbreak.to_string();
         config.pomodoro_bigbreak_table_str = config.pomodoro_bigbreak.to_string();
     }
     let items = vec![
-        //vec!["reverse adding of timers".to_string(), "false".to_string()],
         vec!["darkmode".to_string(), config.darkmode_str.to_owned()],
+        vec![
+            "reverse adding of timers".to_string(),
+            config.reverseadding_str.to_owned(),
+        ],
         vec![
             "pomodoro_time".to_string(),
             config.pomodoro_time_table_str.to_owned(),

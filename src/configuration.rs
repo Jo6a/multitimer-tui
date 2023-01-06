@@ -7,6 +7,7 @@ use tui::widgets::TableState;
 #[derive(Serialize, Deserialize)]
 pub struct Configuration<'a> {
     pub darkmode: bool,
+    pub reverseadding: bool,
     pub pomodoro_time: u16,
     pub pomodoro_smallbreak: u16,
     pub pomodoro_bigbreak: u16,
@@ -21,6 +22,8 @@ pub struct Configuration<'a> {
     pub state: TableState,
     #[serde(skip_serializing, skip_deserializing)]
     pub darkmode_str: String,
+    #[serde(skip_serializing, skip_deserializing)]
+    pub reverseadding_str: String,
     #[serde(skip_serializing, skip_deserializing)]
     pub pomodoro_time_table_str: String,
     #[serde(skip_serializing, skip_deserializing)]
@@ -41,11 +44,13 @@ impl<'a> Configuration<'a> {
             pomodoro_bigbreak,
             timers: Vec::new(),
             darkmode: true,
+            reverseadding: false,
             show_popup: false,
             titles: Vec::new(),
             index: 0,
             state: TableState::default(),
             darkmode_str: "".to_string(),
+            reverseadding_str: "".to_string(),
             pomodoro_time_table_str: "".to_string(),
             pomodoro_smallbreak_table_str: "".to_string(),
             pomodoro_bigbreak_table_str: "".to_string(),
@@ -71,7 +76,7 @@ impl<'a> Configuration<'a> {
     pub fn next_table_entry(&mut self) {
         let i = match self.state.selected() {
             Some(i) => {
-                if i >= 4 - 1 {
+                if i >= 5 - 1 {
                     0
                 } else {
                     i + 1
@@ -86,7 +91,7 @@ impl<'a> Configuration<'a> {
         let i = match self.state.selected() {
             Some(i) => {
                 if i == 0 {
-                    4 - 1
+                    5 - 1
                 } else {
                     i - 1
                 }
@@ -99,9 +104,10 @@ impl<'a> Configuration<'a> {
     pub fn clear_table_entry(&mut self) {
         match self.state.selected().unwrap() {
             0 => self.darkmode_str.clear(),
-            1 => self.pomodoro_time_table_str.clear(),
-            2 => self.pomodoro_smallbreak_table_str.clear(),
-            3 => self.pomodoro_bigbreak_table_str.clear(),
+            1 => self.reverseadding_str.clear(),
+            2 => self.pomodoro_time_table_str.clear(),
+            3 => self.pomodoro_smallbreak_table_str.clear(),
+            4 => self.pomodoro_bigbreak_table_str.clear(),
             _ => return,
         }
     }
@@ -109,9 +115,10 @@ impl<'a> Configuration<'a> {
     pub fn write_table_entry(&mut self, c: char) {
         match self.state.selected().unwrap() {
             0 => self.darkmode_str.push(c),
-            1 => self.pomodoro_time_table_str.push(c),
-            2 => self.pomodoro_smallbreak_table_str.push(c),
-            3 => self.pomodoro_bigbreak_table_str.push(c),
+            1 => self.reverseadding_str.push(c),
+            2 => self.pomodoro_time_table_str.push(c),
+            3 => self.pomodoro_smallbreak_table_str.push(c),
+            4 => self.pomodoro_bigbreak_table_str.push(c),
             _ => return,
         }
     }
@@ -119,15 +126,17 @@ impl<'a> Configuration<'a> {
     pub fn pop_table_entry(&mut self) -> Option<char> {
         match self.state.selected().unwrap() {
             0 => self.darkmode_str.pop(),
-            1 => self.pomodoro_time_table_str.pop(),
-            2 => self.pomodoro_smallbreak_table_str.pop(),
-            3 => self.pomodoro_bigbreak_table_str.pop(),
+            1 => self.reverseadding_str.pop(),
+            2 => self.pomodoro_time_table_str.pop(),
+            3 => self.pomodoro_smallbreak_table_str.pop(),
+            4 => self.pomodoro_bigbreak_table_str.pop(),
             _ => return " ".to_string().pop(),
         }
     }
 
     pub fn save_table_changes(&mut self) {
         self.darkmode = self.darkmode_str.parse::<bool>().unwrap_or_default();
+        self.reverseadding = self.reverseadding_str.parse::<bool>().unwrap_or_default();
         self.pomodoro_time = self.pomodoro_time_table_str.parse::<u16>().unwrap();
         self.pomodoro_smallbreak = self.pomodoro_smallbreak_table_str.parse::<u16>().unwrap();
         self.pomodoro_bigbreak = self.pomodoro_bigbreak_table_str.parse::<u16>().unwrap();
@@ -164,11 +173,7 @@ pub struct Timer {
 }
 
 impl Timer {
-    pub fn new(
-        description: String,
-        timeleft_secs: u16,
-        left_view: bool,
-    ) -> Self {
+    pub fn new(description: String, timeleft_secs: u16, left_view: bool) -> Self {
         Self {
             id: 0,
             is_active: false,
