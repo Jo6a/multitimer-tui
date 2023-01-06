@@ -109,7 +109,7 @@ fn parse_input(input: &String, config: &mut Configuration) {
 
             config
                 .timers
-                .push(Timer::new(argument2, hours, minutes, seconds, true));
+                .push(Timer::new(argument2, seconds + minutes * 60 + hours * 3600, true));
         }
         "add2" => {
             argument2.push_str(&input[i..].to_string());
@@ -132,25 +132,21 @@ fn parse_input(input: &String, config: &mut Configuration) {
 
             config
                 .timers
-                .push(Timer::new(argument2, hours, minutes, seconds, false));
+                .push(Timer::new(argument2, seconds + minutes * 60 + hours * 3600, false));
         }
         "addp" => {
             config.timers.push(Timer::new(
                 "Pomodoro-Timer".to_string(),
-                0,
-                config.pomodoro_time,
-                0,
+                config.pomodoro_time * 60,
                 true,
             ));
             config.timers.push(Timer::new(
                 "Pomodoro-Break".to_string(),
-                0,
                 if !config.timers.is_empty() && config.timers.len() % 6 == 0 {
-                    config.pomodoro_bigbreak
+                    config.pomodoro_bigbreak * 60
                 } else {
-                    config.pomodoro_smallbreak
+                    config.pomodoro_smallbreak * 60
                 },
-                0,
                 true,
             ));
         }
@@ -187,12 +183,7 @@ fn parse_input(input: &String, config: &mut Configuration) {
             let min = argument2[..].parse::<u16>().unwrap();
             for t in &mut config.timers {
                 if t.id == id {
-                    if t.minutes + min > 59 {
-                        t.hours += (t.minutes + min) / 60;
-                        t.minutes = (t.minutes + min) % 60;
-                    } else {
-                        t.minutes += min;
-                    }
+                    t.timeleft_secs += min * 60;
                     break;
                 }
             }
@@ -203,12 +194,10 @@ fn parse_input(input: &String, config: &mut Configuration) {
             let min = argument2[..].parse::<u16>().unwrap();
             for t in &mut config.timers {
                 if t.id == id {
-                    if t.minutes < min {
-                        let diff = min - t.minutes;
-                        t.hours -= diff / 60 + 1;
-                        t.minutes = 60 - (diff % 60);
+                    if t.timeleft_secs < min * 60 {
+                        t.timeleft_secs = 0;
                     } else {
-                        t.minutes -= min;
+                        t.timeleft_secs -= min * 60;
                     }
                     break;
                 }
@@ -231,7 +220,7 @@ fn parse_input(input: &String, config: &mut Configuration) {
 fn run_app<B: Backend>(terminal: &mut Terminal<B>, tick_rate: Duration) -> io::Result<()> {
     let mut last_tick = Instant::now();
     let mut input_field = InputField::new();
-    let data = fs::read_to_string("config.json");
+    let data = fs::read_to_string("config2.json");
     let mut config: Configuration = match data {
         Ok(data) => serde_json::from_str(&data).unwrap_or_else(|_| Configuration::new(25, 5, 10)),
         Err(_) => Configuration::new(25, 5, 10),
@@ -252,13 +241,13 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, tick_rate: Duration) -> io::R
                 for timer in &mut config.timers {
                     if timer.left_view
                         && !left_view_done
-                        && (timer.seconds != 0 || timer.minutes != 0 || timer.hours != 0)
+                        && timer.timeleft_secs != 0
                     {
                         timer.tick();
                         left_view_done = true;
                     } else if !timer.left_view
                         && !right_view_done
-                        && (timer.seconds != 0 || timer.minutes != 0 || timer.hours != 0)
+                        && timer.timeleft_secs != 0
                     {
                         timer.tick();
                         right_view_done = true;

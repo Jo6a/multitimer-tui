@@ -159,18 +159,14 @@ pub struct Timer {
     pub is_active: bool,
     pub left_view: bool,
     pub description: String,
-    pub hours: u16,
-    pub minutes: u16,
-    pub seconds: u16,
+    pub timeleft_secs: u16,
     pub endtime: DateTime<Local>,
 }
 
 impl Timer {
     pub fn new(
         description: String,
-        hours: u16,
-        minutes: u16,
-        seconds: u16,
+        timeleft_secs: u16,
         left_view: bool,
     ) -> Self {
         Self {
@@ -178,19 +174,20 @@ impl Timer {
             is_active: false,
             left_view,
             description,
-            hours,
-            minutes,
-            seconds,
+            timeleft_secs,
             endtime: Local::now(),
         }
     }
 
     pub fn formatted(&self) -> String {
+        let hours = self.timeleft_secs / 3600;
+        let minutes = (self.timeleft_secs % 3600) / 60;
+        let seconds = self.timeleft_secs % 60;
         format!(
             "{:02}:{:02}:{:02} ({})         @{}:{}",
-            self.hours,
-            self.minutes,
-            self.seconds,
+            hours,
+            minutes,
+            seconds,
             self.endtime.format("%Y-%m-%d %H:%M:%S"),
             self.id.to_string(),
             self.description
@@ -199,18 +196,11 @@ impl Timer {
 
     pub fn tick(&mut self) {
         self.is_active = true;
-        if self.seconds > 0 {
-            self.seconds -= 1;
-        } else if self.minutes > 0 {
-            self.minutes -= 1;
-            self.seconds = 59;
-        } else if self.hours > 0 {
-            self.hours -= 1;
-            self.minutes = 59;
-            self.seconds = 59;
+        if self.timeleft_secs > 0 {
+            self.timeleft_secs -= 1;
         }
 
-        if self.seconds == 0 && self.minutes == 0 && self.hours == 0 {
+        if self.timeleft_secs == 0 {
             Command::new("bash")
                 .args(&["-c", "echo -e \"\\a\" "])
                 .spawn()
@@ -223,18 +213,12 @@ pub fn update_timers(timers: &mut Vec<Timer>) {
     let mut dt = Local::now();
     let mut dt2 = dt.clone();
     for (i, timer) in timers.into_iter().enumerate() {
-        if timer.seconds != 0 || timer.minutes != 0 || timer.hours != 0 {
+        if timer.timeleft_secs != 0 {
             if timer.left_view {
-                dt += chrono::Duration::seconds(timer.seconds as i64)
-                    + chrono::Duration::minutes(timer.minutes as i64)
-                    + chrono::Duration::hours(timer.hours as i64);
-
+                dt += chrono::Duration::seconds(timer.timeleft_secs as i64);
                 timer.endtime = dt;
             } else {
-                dt2 += chrono::Duration::seconds(timer.seconds as i64)
-                    + chrono::Duration::minutes(timer.minutes as i64)
-                    + chrono::Duration::hours(timer.hours as i64);
-
+                dt2 += chrono::Duration::seconds(timer.timeleft_secs as i64);
                 timer.endtime = dt2;
             }
         }
