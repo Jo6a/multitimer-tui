@@ -214,6 +214,7 @@ impl Timer {
         }
     }
 }
+
 pub fn update_timers(timers: &mut Vec<Timer>) {
     let mut dt = Local::now();
     let mut dt2 = dt.clone();
@@ -230,6 +231,43 @@ pub fn update_timers(timers: &mut Vec<Timer>) {
         timer.id = i as u16;
         timer.is_active = false;
     }
+}
+
+pub fn add_timer_to_config(config: &mut Configuration, timer: Timer) {
+    if config.reverseadding {
+        config.timers.insert(0, timer);
+    } else {
+        config.timers.push(timer);
+    }
+}
+
+pub fn create_timer_for_input(
+    argument1: &String,
+    argument2: &mut String,
+    left_view: bool,
+) -> Timer {
+    let hours: u16;
+    let minutes: u16;
+    let seconds: u16;
+    if argument1.len() == 8 {
+        hours = argument1[0..2].parse::<u16>().unwrap_or_default();
+        minutes = argument1[3..5].parse::<u16>().unwrap_or_default();
+        seconds = argument1[6..8].parse::<u16>().unwrap_or_default();
+    } else {
+        let min_entered = argument1[..].parse::<u16>().unwrap_or_default();
+        if min_entered == 0 {
+            *argument2 = argument1.to_owned() + " " + &argument2[..]; /* no argument1 with minutes entered */
+        }
+        hours = min_entered / 60;
+        minutes = min_entered % 60;
+        seconds = 0;
+    }
+    let timer = Timer::new(
+        argument2.to_owned(),
+        seconds + minutes * 60 + hours * 3600,
+        left_view,
+    );
+    timer
 }
 
 pub fn num_rightview_timers(timers: &Vec<Timer>) -> usize {
