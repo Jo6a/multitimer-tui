@@ -62,40 +62,19 @@ fn main() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-fn parse_input(input: &String, config: &mut Configuration) {
+fn parse_input(input: &str, config: &mut Configuration) {
     if input.is_empty() {
         return;
     }
-    let mut routine = String::new();
-    let mut argument1 = String::new();
-    let mut argument2 = String::new();
-    let mut routine_flag = true;
-    let mut i = 0;
-    for c in input.chars() {
-        if routine_flag && c.is_whitespace() {
-            routine_flag = false;
-        } else if c.is_whitespace() {
-            i += 1;
-            break;
-        } else {
-            if routine_flag {
-                routine.push(c);
-            } else {
-                argument1.push(c);
-            }
-        }
-        i += 1;
-    }
+    let mut parts = input.split_whitespace();
+    let routine = parts.next().unwrap_or("");
+    let argument1 = parts.next().unwrap_or("").to_string();
+    let mut argument2: String = parts.collect::<Vec<&str>>().join(" ");
 
-    match routine.as_str() {
-        "add" => {
-            argument2.push_str(&input[i..].to_string());
-            let timer = configuration::create_timer_for_input(&argument1, &mut argument2, true);
-            configuration::add_timer_to_config(config, timer);
-        }
-        "add2" => {
-            argument2.push_str(&input[i..].to_string());
-            let timer = configuration::create_timer_for_input(&argument1, &mut argument2, false);
+    match routine {
+        "add" | "add2" => {
+            let timer =
+                configuration::create_timer_for_input(&argument1, &mut argument2, routine == "add");
             configuration::add_timer_to_config(config, timer);
         }
         "addp" => {
@@ -118,23 +97,18 @@ fn parse_input(input: &String, config: &mut Configuration) {
             configuration::add_timer_to_config(config, timer2);
         }
         "rm" => {
-            let id = argument1[..].parse::<u16>().unwrap();
-            for (i, t) in config.timers.iter().enumerate() {
-                if t.id == id {
-                    config.timers.remove(i);
-                    break;
-                }
+            if let Ok(id) = argument1.parse::<u16>() {
+                config.timers.retain(|t| t.id != id);
             }
         }
         "clear" => {
             config.timers.clear();
         }
         "move" => {
-            let id = argument1[..].parse::<usize>().unwrap();
-            argument2.push_str(&input[i..].to_string());
-            let id2 = argument2[..].parse::<usize>().unwrap();
-            let t = config.timers.remove(id);
-            config.timers.insert(id2, t);
+            if let (Ok(id), Ok(id2)) = (argument1[..].parse::<usize>(), argument2[..].parse::<usize>()) {
+                let t = config.timers.remove(id);
+                config.timers.insert(id2, t);
+            }
         }
         "moveup" => {
             let id = argument1[..].parse::<usize>().unwrap();
@@ -146,7 +120,6 @@ fn parse_input(input: &String, config: &mut Configuration) {
         }
         "plus" => {
             let id = argument1[..].parse::<u16>().unwrap();
-            argument2.push_str(&input[i..].to_string());
             let min = argument2[..].parse::<u16>().unwrap();
             for t in &mut config.timers {
                 if t.id == id {
@@ -157,7 +130,6 @@ fn parse_input(input: &String, config: &mut Configuration) {
         }
         "minus" => {
             let id = argument1[..].parse::<u16>().unwrap();
-            argument2.push_str(&input[i..].to_string());
             let min = argument2[..].parse::<u16>().unwrap();
             for t in &mut config.timers {
                 if t.id == id {
@@ -171,10 +143,9 @@ fn parse_input(input: &String, config: &mut Configuration) {
             }
         }
         "rename" => {
-            let id = argument1[..].parse::<u16>().unwrap();
-            for t in &mut config.timers {
-                if t.id == id {
-                    t.description = input[i..].to_string();
+            if let Ok(id) = argument1.parse::<u16>() {
+                if let Some(timer) = config.timers.iter_mut().find(|t| t.id == id) {
+                    timer.description = argument2;
                 }
             }
         }
