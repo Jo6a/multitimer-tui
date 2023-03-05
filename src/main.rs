@@ -1,7 +1,7 @@
 use std::fs;
 
 use crossterm::{
-    event::{self, DisableMouseCapture, Event, KeyCode},
+    event::{self, DisableMouseCapture, Event, KeyCode, KeyEvent},
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
@@ -105,7 +105,10 @@ fn parse_input(input: &str, config: &mut Configuration) {
             config.timers.clear();
         }
         "move" => {
-            if let (Ok(id), Ok(id2)) = (argument1[..].parse::<usize>(), argument2[..].parse::<usize>()) {
+            if let (Ok(id), Ok(id2)) = (
+                argument1[..].parse::<usize>(),
+                argument2[..].parse::<usize>(),
+            ) {
                 let t = config.timers.remove(id);
                 config.timers.insert(id2, t);
             }
@@ -159,10 +162,13 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, tick_rate: Duration) -> io::R
     let mut last_tick = Instant::now();
     let mut input_field = InputField::new();
     let data = fs::read_to_string("config.json");
-    let mut config: Configuration = match data {
-        Ok(data) => serde_json::from_str(&data).unwrap_or_else(|_| Configuration::new(25, 5, 10)),
-        Err(_) => Configuration::new(25, 5, 10),
-    };
+    //let mut config: Configuration = match data {
+    //    Ok(data) => serde_json::from_str(&data).unwrap_or_else(|_| Configuration::new(25, 5, 10)),
+    //    Err(_) => Configuration::new(25, 5, 10),
+    //};
+    let mut config: Configuration = data
+        .map(|data| serde_json::from_str(&data).unwrap_or_else(|_| Configuration::new(25, 5, 10)))
+        .unwrap_or_else(|_| Configuration::new(25, 5, 10));
     //let mut config: Configuration = Configuration::new(25, 5, 10);
     config.titles = vec!["Timer [1]", "Config [2]"];
     configuration::update_timers(&mut config.timers);
@@ -199,56 +205,60 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, tick_rate: Duration) -> io::R
         let timeout = tick_rate
             .checked_sub(last_tick.elapsed())
             .unwrap_or_else(|| Duration::from_secs(0));
-        if config.index == 0 && crossterm::event::poll(timeout)? {
+        if crossterm::event::poll(timeout)? {
             if let Event::Key(key) = event::read()? {
                 if input_field.content.is_empty() && KeyCode::Char('q') == key.code {
                     return Ok(());
-                } else if input_field.content.is_empty() && KeyCode::Char('h') == key.code {
-                    config.show_popup = !config.show_popup;
-                } else if input_field.content.is_empty() && KeyCode::Char(' ') == key.code {
-                    pause_flag = !pause_flag;
-                } else if KeyCode::Esc == key.code {
-                    input_field.content.clear();
-                } else if let KeyCode::Enter = key.code {
-                    parse_input(&input_field.content, &mut config);
-                    input_field.content.clear();
                 } else if KeyCode::Right == key.code || KeyCode::Tab == key.code {
                     config.next();
                 } else if KeyCode::Left == key.code {
                     config.previous()
-                } else if let KeyCode::Char(c) = key.code {
-                    input_field.content.push(c);
-                } else if let KeyCode::Backspace = key.code {
-                    input_field.content.pop();
+                } else {
+                    handle_key_press(key, &mut config, &mut input_field, &mut pause_flag)?;
                 }
-                terminal.draw(|f| ui(f, &mut config, &input_field))?;
             }
-        } else if config.index == 1 && crossterm::event::poll(timeout)? {
-            if let Event::Key(key) = event::read()? {
-                if input_field.content.is_empty() && KeyCode::Char('q') == key.code {
-                    return Ok(());
-                } else if KeyCode::Esc == key.code {
-                    config.clear_table_entry();
-                } else if let KeyCode::Enter = key.code {
-                    config.save_table_changes();
-                } else if KeyCode::Right == key.code || KeyCode::Tab == key.code {
-                    config.next();
-                } else if KeyCode::Left == key.code {
-                    config.previous()
-                } else if let KeyCode::Char(c) = key.code {
-                    config.write_table_entry(c);
-                } else if let KeyCode::Backspace = key.code {
-                    config.pop_table_entry();
-                } else if let KeyCode::Up = key.code {
-                    config.previous_table_entry()
-                } else if let KeyCode::Down = key.code {
-                    config.next_table_entry();
-                }
-                terminal.draw(|f| ui(f, &mut config, &input_field))?;
-            }
+            terminal.draw(|f| ui(f, &mut config, &mut input_field))?;
         }
         i += 1;
     }
+}
+
+fn handle_key_press(
+    key: KeyEvent,
+    config: &mut Configuration,
+    input_field: &mut InputField,
+    pause_flag: &mut bool,
+) -> Result<(), io::Error> {
+    Ok(if config.index == 0 {
+        if input_field.content.is_empty() && KeyCode::Char('h') == key.code {
+            config.show_popup = !config.show_popup;
+        } else if input_field.content.is_empty() && KeyCode::Char(' ') == key.code {
+            *pause_flag = !*pause_flag;
+        } else if KeyCode::Esc == key.code {
+            input_field.content.clear();
+        } else if let KeyCode::Enter = key.code {
+            parse_input(&input_field.content, config);
+            input_field.content.clear();
+        } else if let KeyCode::Char(c) = key.code {
+            input_field.content.push(c);
+        } else if let KeyCode::Backspace = key.code {
+            input_field.content.pop();
+        }
+    } else if config.index == 1 {
+        if KeyCode::Esc == key.code {
+            config.clear_table_entry();
+        } else if let KeyCode::Enter = key.code {
+            config.save_table_changes();
+        } else if let KeyCode::Char(c) = key.code {
+            config.write_table_entry(c);
+        } else if let KeyCode::Backspace = key.code {
+            config.pop_table_entry();
+        } else if let KeyCode::Up = key.code {
+            config.previous_table_entry()
+        } else if let KeyCode::Down = key.code {
+            config.next_table_entry();
+        }
+    })
 }
 
 pub fn get_background_color(darkmode: bool) -> Color {
@@ -538,27 +548,13 @@ fn configtab_rendering<B: Backend>(
 
 /// helper function to create a centered rect using up certain percentage of the available rect `r`
 fn centered_rect(percent_x: u16, percent_y: u16, r: Rect) -> Rect {
-    let popup_layout = Layout::default()
-        .direction(Direction::Vertical)
-        .constraints(
-            [
-                Constraint::Percentage((100 - percent_y) / 2),
-                Constraint::Percentage(percent_y),
-                Constraint::Percentage((100 - percent_y) / 2),
-            ]
-            .as_ref(),
-        )
-        .split(r);
+    let v_margin = r.height * (100 - percent_y) / 200;
+    let h_margin = r.width * (100 - percent_x) / 200;
 
-    Layout::default()
-        .direction(Direction::Horizontal)
-        .constraints(
-            [
-                Constraint::Percentage((100 - percent_x) / 2),
-                Constraint::Percentage(percent_x),
-                Constraint::Percentage((100 - percent_x) / 2),
-            ]
-            .as_ref(),
-        )
-        .split(popup_layout[1])[1]
+    Rect {
+        x: r.x + h_margin,
+        y: r.y + v_margin,
+        width: r.width - 2 * h_margin,
+        height: r.height - 2 * v_margin,
+    }
 }
