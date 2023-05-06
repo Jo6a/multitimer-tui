@@ -1,0 +1,8 @@
+{
+  "darkmode": true,
+  "reverseadding": false,
+  "pomodoro_time": 25,
+  "pomodoro_smallbreak": 5,
+  "pomodoro_bigbreak": 10,
+  "timers": []
+}

@@ -27,12 +27,38 @@ use configuration::Timer;
 
 struct InputField {
     content: String,
+    cursor_position: usize,
 }
 
 impl InputField {
     fn new() -> Self {
         Self {
             content: String::new(),
+            cursor_position: 0,
+        }
+    }
+
+    fn move_cursor_left(&mut self) {
+        if self.cursor_position > 0 {
+            self.cursor_position -= 1;
+        }
+    }
+
+    fn move_cursor_right(&mut self) {
+        if self.cursor_position < self.content.len() {
+            self.cursor_position += 1;
+        }
+    }
+
+    fn insert_char(&mut self, c: char) {
+        self.content.insert(self.cursor_position, c);
+        self.move_cursor_right();
+    }
+
+    fn delete_char(&mut self) {
+        if self.cursor_position > 0 {
+            self.content.remove(self.cursor_position - 1);
+            self.move_cursor_left();
         }
     }
 }
@@ -73,84 +99,34 @@ fn parse_input(input: &str, config: &mut Configuration) {
 
     match routine {
         "add" | "add2" => {
-            let timer =
-                configuration::create_timer_for_input(&argument1, &mut argument2, routine == "add");
-            configuration::add_timer_to_config(config, timer);
+            add_timer(&argument1, &mut argument2, routine, config);
         }
         "addp" => {
-            let timer1 = Timer::new(
-                "Pomodoro-Timer".to_string(),
-                config.pomodoro_time * 60,
-                true,
-            );
-            let timer2 = Timer::new(
-                "Pomodoro-Break".to_string(),
-                if !config.timers.is_empty() && config.timers.len() % 6 == 0 {
-                    config.pomodoro_bigbreak * 60
-                } else {
-                    config.pomodoro_smallbreak * 60
-                },
-                true,
-            );
-
-            configuration::add_timer_to_config(config, timer1);
-            configuration::add_timer_to_config(config, timer2);
+            add_pomodoro_timer(config);
         }
         "rm" => {
-            if let Ok(id) = argument1.parse::<u16>() {
-                config.timers.retain(|t| t.id != id);
-            }
+            remove_timer(&argument1, config);
         }
         "clear" => {
             config.timers.clear();
         }
         "move" => {
-            if let (Ok(id), Ok(id2)) = (
-                argument1[..].parse::<usize>(),
-                argument2[..].parse::<usize>(),
-            ) {
-                let t = config.timers.remove(id);
-                config.timers.insert(id2, t);
-            }
+            move_timer(&argument1, &argument2, config);
         }
         "moveup" => {
-            let id = argument1[..].parse::<usize>().unwrap();
-            config.timers.swap(id, id - 1);
+            move_timer_up(&argument1, config);
         }
         "movedown" => {
-            let id = argument1[..].parse::<usize>().unwrap();
-            config.timers.swap(id, id + 1);
+            move_timer_down(&argument1, config);
         }
         "plus" => {
-            let id = argument1[..].parse::<u16>().unwrap();
-            let min = argument2[..].parse::<u16>().unwrap();
-            for t in &mut config.timers {
-                if t.id == id {
-                    t.timeleft_secs += min * 60;
-                    break;
-                }
-            }
+            increase_timer(&argument1, &argument2, config);
         }
         "minus" => {
-            let id = argument1[..].parse::<u16>().unwrap();
-            let min = argument2[..].parse::<u16>().unwrap();
-            for t in &mut config.timers {
-                if t.id == id {
-                    if t.timeleft_secs < min * 60 {
-                        t.timeleft_secs = 0;
-                    } else {
-                        t.timeleft_secs -= min * 60;
-                    }
-                    break;
-                }
-            }
+            decrease_timer(&argument1, &argument2, config);
         }
         "rename" => {
-            if let Ok(id) = argument1.parse::<u16>() {
-                if let Some(timer) = config.timers.iter_mut().find(|t| t.id == id) {
-                    timer.description = argument2;
-                }
-            }
+            rename_timer(argument1, config, argument2);
         }
         _ => {}
     }
@@ -158,18 +134,139 @@ fn parse_input(input: &str, config: &mut Configuration) {
     configuration::update_timers(&mut config.timers);
 }
 
+fn add_timer(
+    argument1: &String,
+    argument2: &mut String,
+    routine: &str,
+    config: &mut Configuration,
+) {
+    let timer = configuration::create_timer_for_input(argument1, argument2, routine == "add");
+    configuration::add_timer_to_config(config, timer);
+}
+
+fn add_pomodoro_timer(config: &mut Configuration) {
+    let timer1 = Timer::new(
+        "Pomodoro-Timer".to_string(),
+        config.pomodoro_time * 60,
+        true,
+    );
+    let timer2 = Timer::new(
+        "Pomodoro-Break".to_string(),
+        if !config.timers.is_empty() && config.timers.len() % 6 == 0 {
+            config.pomodoro_bigbreak * 60
+        } else {
+            config.pomodoro_smallbreak * 60
+        },
+        true,
+    );
+
+    configuration::add_timer_to_config(config, timer1);
+    configuration::add_timer_to_config(config, timer2);
+}
+
+fn remove_timer(argument1: &String, config: &mut Configuration) {
+    if let Ok(id) = argument1.parse::<u16>() {
+        config.timers.retain(|t| t.id != id);
+    }
+}
+
+fn move_timer(argument1: &String, argument2: &String, config: &mut Configuration) {
+    if let (Ok(id), Ok(id2)) = (
+        argument1[..].parse::<usize>(),
+        argument2[..].parse::<usize>(),
+    ) {
+        let t = config.timers.remove(id);
+        config.timers.insert(id2, t);
+    }
+}
+
+fn move_timer_up(argument1: &String, config: &mut Configuration) {
+    let id = argument1[..].parse::<usize>().unwrap();
+    config.timers.swap(id, id - 1);
+}
+
+fn move_timer_down(argument1: &String, config: &mut Configuration) {
+    let id = argument1[..].parse::<usize>().unwrap();
+    config.timers.swap(id, id + 1);
+}
+
+fn increase_timer(argument1: &String, argument2: &String, config: &mut Configuration) {
+    let id = argument1[..].parse::<u16>().unwrap();
+    let min = argument2[..].parse::<u16>().unwrap();
+    for t in &mut config.timers {
+        if t.id == id {
+            t.timeleft_secs += min * 60;
+            break;
+        }
+    }
+}
+
+fn decrease_timer(argument1: &String, argument2: &String, config: &mut Configuration) {
+    let id = argument1[..].parse::<u16>().unwrap();
+    let min = argument2[..].parse::<u16>().unwrap();
+    for t in &mut config.timers {
+        if t.id == id {
+            if t.timeleft_secs < min * 60 {
+                t.timeleft_secs = 0;
+            } else {
+                t.timeleft_secs -= min * 60;
+            }
+            break;
+        }
+    }
+}
+
+fn rename_timer(argument1: String, config: &mut Configuration, argument2: String) {
+    if let Ok(id) = argument1.parse::<u16>() {
+        if let Some(timer) = config.timers.iter_mut().find(|t| t.id == id) {
+            timer.description = argument2;
+        }
+    }
+}
+fn draw_input_field<B>(terminal: &mut Terminal<B>, input_field: &InputField)
+where
+    B: Backend,
+{
+    //let cursor_style = Style::default().fg(Color::Yellow).modifier(Modifier::BOLD);
+    let cursor_style = Style::default().fg(Color::Yellow);
+    let normal_style = Style::default().fg(Color::White);
+
+    let cursor_pos = input_field.cursor_position;
+    let (left, right) = input_field.content.split_at(cursor_pos);
+
+    let text = format!("{}{}{}", left, "█", right);
+
+    let paragraph = Paragraph::new(text.as_ref())
+        .style(normal_style)
+        .block(Block::default().borders(Borders::ALL));
+
+    terminal.draw(|f| {
+        let size = f.size();
+        let chunks = Layout::default()
+            .direction(Direction::Horizontal)
+            .constraints([Constraint::Percentage(100)].as_ref())
+            .split(size);
+
+        f.render_widget(paragraph, chunks[0]);
+        f.set_cursor(
+            // Put cursor past the end of the input text
+            chunks[0].x + cursor_pos as u16 + 1,
+            // Move one line down, from the border to the input line
+            chunks[0].y + 1,
+        );
+        //f.set_style(cursor_style);
+        //f.write_str("█")?;
+        //f.set_style(normal_style);
+    });
+}
+
 fn run_app<B: Backend>(terminal: &mut Terminal<B>, tick_rate: Duration) -> io::Result<()> {
     let mut last_tick = Instant::now();
     let mut input_field = InputField::new();
-    let data = fs::read_to_string("config.json");
-    //let mut config: Configuration = match data {
-    //    Ok(data) => serde_json::from_str(&data).unwrap_or_else(|_| Configuration::new(25, 5, 10)),
-    //    Err(_) => Configuration::new(25, 5, 10),
-    //};
-    let mut config: Configuration = data
+    let mut config: Configuration = fs::read_to_string("config.json")
         .map(|data| serde_json::from_str(&data).unwrap_or_else(|_| Configuration::new(25, 5, 10)))
         .unwrap_or_else(|_| Configuration::new(25, 5, 10));
-    //let mut config: Configuration = Configuration::new(25, 5, 10);
+
     config.titles = vec!["Timer [1]", "Config [2]"];
     configuration::update_timers(&mut config.timers);
 
@@ -195,6 +292,7 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, tick_rate: Duration) -> io::R
                 configuration::update_timers(&mut config.timers);
             }
 
+
             terminal.draw(|f| ui(f, &mut config, &input_field))?;
 
             if i % 30 == 0 {
@@ -209,15 +307,46 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, tick_rate: Duration) -> io::R
             if let Event::Key(key) = event::read()? {
                 if input_field.content.is_empty() && KeyCode::Char('q') == key.code {
                     return Ok(());
-                } else if KeyCode::Right == key.code || KeyCode::Tab == key.code {
+                } else if KeyCode::Tab == key.code {
                     config.next();
-                } else if KeyCode::Left == key.code {
-                    config.previous()
                 } else {
                     handle_key_press(key, &mut config, &mut input_field, &mut pause_flag)?;
                 }
             }
             terminal.draw(|f| ui(f, &mut config, &mut input_field))?;
+
+            /* TEST 
+                //let cursor_style = Style::default().fg(Color::Yellow).modifier(Modifier::BOLD);
+            let normal_style = Style::default().fg(Color::Yellow);
+
+            let cursor_pos = input_field.cursor_position;
+            let (left, right) = input_field.content.split_at(cursor_pos);
+
+            let text = format!("{}{}{}", left, "█", right);
+
+            let paragraph = Paragraph::new(text.as_ref())
+                .style(normal_style)
+                .block(Block::default().borders(Borders::ALL));
+
+            terminal.draw(|f| {
+                let size = f.size();
+                let chunks = Layout::default()
+                    .direction(Direction::Horizontal)
+                    .constraints([Constraint::Percentage(90)].as_ref())
+                    .split(size);
+
+                f.render_widget(paragraph, chunks[0]);
+                f.set_cursor(
+                    // Put cursor past the end of the input text
+                    chunks[0].x + cursor_pos as u16 + 1,
+                    // Move one line down, from the border to the input line
+                    chunks[0].y + 1,
+                );
+                //f.set_style(cursor_style);
+                //f.write_str("█")?;
+                //f.set_style(normal_style);
+            });
+             TEST */
         }
         i += 1;
     }
@@ -232,17 +361,25 @@ fn handle_key_press(
     Ok(if config.index == 0 {
         if input_field.content.is_empty() && KeyCode::Char('h') == key.code {
             config.show_popup = !config.show_popup;
+        } else if let KeyCode::Left = key.code {
+            input_field.move_cursor_left();
+        } else if let KeyCode::Right = key.code {
+            input_field.move_cursor_right();
         } else if input_field.content.is_empty() && KeyCode::Char(' ') == key.code {
             *pause_flag = !*pause_flag;
         } else if KeyCode::Esc == key.code {
             input_field.content.clear();
+            input_field.cursor_position = 0;
         } else if let KeyCode::Enter = key.code {
             parse_input(&input_field.content, config);
             input_field.content.clear();
+            input_field.cursor_position = 0;
         } else if let KeyCode::Char(c) = key.code {
-            input_field.content.push(c);
+            //input_field.content.push(c);
+            input_field.insert_char(c);
         } else if let KeyCode::Backspace = key.code {
-            input_field.content.pop();
+            //input_field.content.pop();
+            input_field.delete_char();
         }
     } else if config.index == 1 {
         if KeyCode::Esc == key.code {
@@ -442,6 +579,12 @@ fn timertab_rendering<B: Backend>(
                 .bg(get_background_color(config.darkmode)),
         )
         .block(Block::default().borders(Borders::ALL).title("Input"));
+    f.set_cursor(
+        // Put cursor past the end of the input text
+        chunks[0].x + input_field.cursor_position as u16 + 1,
+        // Move one line down, from the border to the input line
+        chunks[chunks.len() - 1].y + 1,
+    );
     f.render_widget(input, chunks[chunks.len() - 1]);
     let text = if !input_field.content.is_empty() {
         "Press <ESC> to clear the input field"
