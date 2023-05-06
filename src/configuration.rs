@@ -4,6 +4,8 @@ use std::process::Command;
 use tui::style::Color;
 use tui::widgets::TableState;
 
+use multitimer_tui::timer::Timer;
+
 #[derive(Serialize, Deserialize)]
 pub struct Configuration<'a> {
     pub darkmode: bool,
@@ -158,118 +160,64 @@ impl<'a> Configuration<'a> {
             return Color::Black;
         };
     }
-}
 
-#[derive(Serialize, Deserialize)]
-pub struct Timer {
-    #[serde(skip_serializing, skip_deserializing)]
-    pub id: u16,
-    #[serde(skip_serializing, skip_deserializing)]
-    pub is_active: bool,
-    pub left_view: bool,
-    pub description: String,
-    pub timeleft_secs: u16,
-    pub endtime: DateTime<Local>,
-}
-
-impl Timer {
-    pub fn new(description: String, timeleft_secs: u16, left_view: bool) -> Self {
-        Self {
-            id: 0,
-            is_active: false,
-            left_view,
-            description,
-            timeleft_secs,
-            endtime: Local::now(),
-        }
-    }
-
-    pub fn formatted(&self) -> String {
-        let hours = self.timeleft_secs / 3600;
-        let minutes = (self.timeleft_secs % 3600) / 60;
-        let seconds = self.timeleft_secs % 60;
-        format!(
-            "{:02}:{:02}:{:02} ({})         @{}:{}",
-            hours,
-            minutes,
-            seconds,
-            self.endtime.format("%Y-%m-%d %H:%M:%S"),
-            self.id.to_string(),
-            self.description
-        )
-    }
-
-    pub fn tick(&mut self) {
-        self.is_active = true;
-        if self.timeleft_secs > 0 {
-            self.timeleft_secs -= 1;
-        }
-
-        if self.timeleft_secs == 0 {
-            Command::new("bash")
-                .args(&["-c", "echo -e \"\\a\" "])
-                .spawn()
-                .expect("Playing sound failed");
-            self.is_active = false;
-        }
-    }
-}
-
-pub fn update_timers(timers: &mut Vec<Timer>) {
-    let mut dt = Local::now();
-    let mut dt2 = dt.clone();
-    for (i, timer) in timers.into_iter().enumerate() {
-        if timer.timeleft_secs != 0 {
-            if timer.left_view {
-                dt += chrono::Duration::seconds(timer.timeleft_secs as i64);
-                timer.endtime = dt;
-            } else {
-                dt2 += chrono::Duration::seconds(timer.timeleft_secs as i64);
-                timer.endtime = dt2;
+    pub fn update_timers(&mut self) {
+        let mut dt = Local::now();
+        let mut dt2 = dt.clone();
+        for (i, timer) in self.timers.iter_mut().enumerate() {
+            if timer.timeleft_secs != 0 {
+                if timer.left_view {
+                    dt += chrono::Duration::seconds(timer.timeleft_secs as i64);
+                    timer.endtime = dt;
+                } else {
+                    dt2 += chrono::Duration::seconds(timer.timeleft_secs as i64);
+                    timer.endtime = dt2;
+                }
             }
+            timer.id = i as u16;
+            timer.is_active = false;
         }
-        timer.id = i as u16;
-        timer.is_active = false;
     }
-}
-
-pub fn add_timer_to_config(config: &mut Configuration, timer: Timer) {
-    if config.reverseadding {
-        config.timers.insert(0, timer);
-    } else {
-        config.timers.push(timer);
-    }
-}
-
-pub fn create_timer_for_input(
-    argument1: &String,
-    argument2: &mut String,
-    left_view: bool,
-) -> Timer {
-    let hours: u16;
-    let minutes: u16;
-    let seconds: u16;
-    if argument1.len() == 8 {
-        hours = argument1[0..2].parse::<u16>().unwrap_or_default();
-        minutes = argument1[3..5].parse::<u16>().unwrap_or_default();
-        seconds = argument1[6..8].parse::<u16>().unwrap_or_default();
-    } else {
-        let min_entered = argument1[..].parse::<u16>().unwrap_or_default();
-        if min_entered == 0 {
-            *argument2 = argument1.to_owned() + " " + &argument2[..]; /* no argument1 with minutes entered */
+    
+    pub fn add_timer_to_config(&mut self, timer: Timer) {
+        if self.reverseadding {
+            self.timers.insert(0, timer);
+        } else {
+            self.timers.push(timer);
         }
-        hours = min_entered / 60;
-        minutes = min_entered % 60;
-        seconds = 0;
     }
-    let timer = Timer::new(
-        argument2.to_owned(),
-        seconds + minutes * 60 + hours * 3600,
-        left_view,
-    );
-    timer
-}
-
-pub fn num_rightview_timers(timers: &Vec<Timer>) -> usize {
-    timers.iter().filter(|t| t.left_view == false).count()
+    
+    pub fn create_timer_for_input(
+        &mut self,
+        argument1: &String,
+        argument2: &mut String,
+        left_view: bool,
+    ) -> Timer {
+        let hours: u16;
+        let minutes: u16;
+        let seconds: u16;
+        if argument1.len() == 8 {
+            hours = argument1[0..2].parse::<u16>().unwrap_or_default();
+            minutes = argument1[3..5].parse::<u16>().unwrap_or_default();
+            seconds = argument1[6..8].parse::<u16>().unwrap_or_default();
+        } else {
+            let min_entered = argument1[..].parse::<u16>().unwrap_or_default();
+            if min_entered == 0 {
+                *argument2 = argument1.to_owned() + " " + &argument2[..]; /* no argument1 with minutes entered */
+            }
+            hours = min_entered / 60;
+            minutes = min_entered % 60;
+            seconds = 0;
+        }
+        let timer = Timer::new(
+            argument2.to_owned(),
+            seconds + minutes * 60 + hours * 3600,
+            left_view,
+        );
+        timer
+    }
+    
+    pub fn num_rightview_timers(&mut self) -> usize {
+        self.timers.iter().filter(|t| t.left_view == false).count()
+    }
 }

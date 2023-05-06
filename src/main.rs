@@ -23,7 +23,7 @@ use tui::{
 pub mod configuration;
 
 use configuration::Configuration;
-use configuration::Timer;
+use multitimer_tui::timer::Timer;
 
 struct InputField {
     content: String,
@@ -131,7 +131,7 @@ fn parse_input(input: &str, config: &mut Configuration) {
         _ => {}
     }
     config.write_to_file().unwrap();
-    configuration::update_timers(&mut config.timers);
+    config.update_timers();
 }
 
 fn add_timer(
@@ -140,8 +140,8 @@ fn add_timer(
     routine: &str,
     config: &mut Configuration,
 ) {
-    let timer = configuration::create_timer_for_input(argument1, argument2, routine == "add");
-    configuration::add_timer_to_config(config, timer);
+    let timer = config.create_timer_for_input(argument1, argument2, routine == "add");
+    config.add_timer_to_config(timer);
 }
 
 fn add_pomodoro_timer(config: &mut Configuration) {
@@ -160,8 +160,8 @@ fn add_pomodoro_timer(config: &mut Configuration) {
         true,
     );
 
-    configuration::add_timer_to_config(config, timer1);
-    configuration::add_timer_to_config(config, timer2);
+    config.add_timer_to_config(timer1);
+    config.add_timer_to_config(timer2);
 }
 
 fn remove_timer(argument1: &String, config: &mut Configuration) {
@@ -254,9 +254,6 @@ where
             // Move one line down, from the border to the input line
             chunks[0].y + 1,
         );
-        //f.set_style(cursor_style);
-        //f.write_str("█")?;
-        //f.set_style(normal_style);
     });
 }
 
@@ -268,7 +265,7 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, tick_rate: Duration) -> io::R
         .unwrap_or_else(|_| Configuration::new(25, 5, 10));
 
     config.titles = vec!["Timer [1]", "Config [2]"];
-    configuration::update_timers(&mut config.timers);
+    config.update_timers();
 
     let mut pause_flag: bool = false;
 
@@ -289,9 +286,8 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, tick_rate: Duration) -> io::R
                     }
                 }
             } else {
-                configuration::update_timers(&mut config.timers);
+                config.update_timers();
             }
-
 
             terminal.draw(|f| ui(f, &mut config, &input_field))?;
 
@@ -314,39 +310,6 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, tick_rate: Duration) -> io::R
                 }
             }
             terminal.draw(|f| ui(f, &mut config, &mut input_field))?;
-
-            /* TEST 
-                //let cursor_style = Style::default().fg(Color::Yellow).modifier(Modifier::BOLD);
-            let normal_style = Style::default().fg(Color::Yellow);
-
-            let cursor_pos = input_field.cursor_position;
-            let (left, right) = input_field.content.split_at(cursor_pos);
-
-            let text = format!("{}{}{}", left, "█", right);
-
-            let paragraph = Paragraph::new(text.as_ref())
-                .style(normal_style)
-                .block(Block::default().borders(Borders::ALL));
-
-            terminal.draw(|f| {
-                let size = f.size();
-                let chunks = Layout::default()
-                    .direction(Direction::Horizontal)
-                    .constraints([Constraint::Percentage(90)].as_ref())
-                    .split(size);
-
-                f.render_widget(paragraph, chunks[0]);
-                f.set_cursor(
-                    // Put cursor past the end of the input text
-                    chunks[0].x + cursor_pos as u16 + 1,
-                    // Move one line down, from the border to the input line
-                    chunks[0].y + 1,
-                );
-                //f.set_style(cursor_style);
-                //f.write_str("█")?;
-                //f.set_style(normal_style);
-            });
-             TEST */
         }
         i += 1;
     }
@@ -422,7 +385,7 @@ fn ui<B: Backend>(f: &mut Frame<B>, config: &mut Configuration, input_field: &In
             .bg(get_background_color(config.darkmode)),
     );
     f.render_widget(block, size);
-    let len_right_view_timers = configuration::num_rightview_timers(&config.timers);
+    let len_right_view_timers = config.num_rightview_timers();
     let len_left_view_timers = config.timers.len() - len_right_view_timers;
     let left_view_timers: Vec<&Timer> = config
         .timers
