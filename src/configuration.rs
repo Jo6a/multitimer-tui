@@ -1,6 +1,5 @@
-use chrono::{DateTime, Local};
+use chrono::Local;
 use serde::{Deserialize, Serialize};
-use std::process::Command;
 use tui::style::Color;
 use tui::widgets::TableState;
 

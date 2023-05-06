@@ -17,8 +17,8 @@ use tui::{
 };
 
 use multitimer_tui::configuration::Configuration;
+use multitimer_tui::input_field::InputField;
 use multitimer_tui::ui;
-use multitimer_tui::ui::InputField;
 
 fn main() -> Result<(), Box<dyn Error>> {
     enable_raw_mode()?;
