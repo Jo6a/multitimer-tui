@@ -4,7 +4,7 @@ use std::process::Command;
 use tui::style::Color;
 use tui::widgets::TableState;
 
-use multitimer_tui::timer::Timer;
+use crate::timer::Timer;
 
 #[derive(Serialize, Deserialize)]
 pub struct Configuration<'a> {
@@ -178,7 +178,7 @@ impl<'a> Configuration<'a> {
             timer.is_active = false;
         }
     }
-    
+
     pub fn add_timer_to_config(&mut self, timer: Timer) {
         if self.reverseadding {
             self.timers.insert(0, timer);
@@ -186,7 +186,7 @@ impl<'a> Configuration<'a> {
             self.timers.push(timer);
         }
     }
-    
+
     pub fn create_timer_for_input(
         &mut self,
         argument1: &String,
@@ -216,7 +216,7 @@ impl<'a> Configuration<'a> {
         );
         timer
     }
-    
+
     pub fn num_rightview_timers(&mut self) -> usize {
         self.timers.iter().filter(|t| t.left_view == false).count()
     }
