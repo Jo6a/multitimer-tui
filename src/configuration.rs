@@ -9,6 +9,7 @@ use crate::timer::Timer;
 pub struct Configuration<'a> {
     pub darkmode: bool,
     pub reverseadding: bool,
+    pub action_timeout: bool,
     pub pomodoro_time: u16,
     pub pomodoro_smallbreak: u16,
     pub pomodoro_bigbreak: u16,
@@ -25,6 +26,8 @@ pub struct Configuration<'a> {
     pub darkmode_str: String,
     #[serde(skip_serializing, skip_deserializing)]
     pub reverseadding_str: String,
+    #[serde(skip_serializing, skip_deserializing)]
+    pub action_timeout_str: String,
     #[serde(skip_serializing, skip_deserializing)]
     pub pomodoro_time_table_str: String,
     #[serde(skip_serializing, skip_deserializing)]
@@ -46,12 +49,14 @@ impl<'a> Configuration<'a> {
             timers: Vec::new(),
             darkmode: true,
             reverseadding: false,
+            action_timeout: false,
             show_popup: false,
             titles: Vec::new(),
             index: 0,
             state: TableState::default(),
             darkmode_str: "".to_string(),
             reverseadding_str: "".to_string(),
+            action_timeout_str: "".to_string(),
             pomodoro_time_table_str: "".to_string(),
             pomodoro_smallbreak_table_str: "".to_string(),
             pomodoro_bigbreak_table_str: "".to_string(),
@@ -106,9 +111,10 @@ impl<'a> Configuration<'a> {
         match self.state.selected().unwrap() {
             0 => self.darkmode_str.clear(),
             1 => self.reverseadding_str.clear(),
-            2 => self.pomodoro_time_table_str.clear(),
-            3 => self.pomodoro_smallbreak_table_str.clear(),
-            4 => self.pomodoro_bigbreak_table_str.clear(),
+            2 => self.action_timeout_str.clear(),
+            3 => self.pomodoro_time_table_str.clear(),
+            4 => self.pomodoro_smallbreak_table_str.clear(),
+            5 => self.pomodoro_bigbreak_table_str.clear(),
             _ => return,
         }
     }
@@ -117,9 +123,10 @@ impl<'a> Configuration<'a> {
         match self.state.selected().unwrap() {
             0 => self.darkmode_str.push(c),
             1 => self.reverseadding_str.push(c),
-            2 => self.pomodoro_time_table_str.push(c),
-            3 => self.pomodoro_smallbreak_table_str.push(c),
-            4 => self.pomodoro_bigbreak_table_str.push(c),
+            2 => self.action_timeout_str.push(c),
+            3 => self.pomodoro_time_table_str.push(c),
+            4 => self.pomodoro_smallbreak_table_str.push(c),
+            5 => self.pomodoro_bigbreak_table_str.push(c),
             _ => return,
         }
     }
@@ -128,9 +135,10 @@ impl<'a> Configuration<'a> {
         match self.state.selected().unwrap() {
             0 => self.darkmode_str.pop(),
             1 => self.reverseadding_str.pop(),
-            2 => self.pomodoro_time_table_str.pop(),
-            3 => self.pomodoro_smallbreak_table_str.pop(),
-            4 => self.pomodoro_bigbreak_table_str.pop(),
+            2 => self.action_timeout_str.pop(),
+            3 => self.pomodoro_time_table_str.pop(),
+            4 => self.pomodoro_smallbreak_table_str.pop(),
+            5 => self.pomodoro_bigbreak_table_str.pop(),
             _ => return " ".to_string().pop(),
         }
     }
@@ -138,26 +146,11 @@ impl<'a> Configuration<'a> {
     pub fn save_table_changes(&mut self) {
         self.darkmode = self.darkmode_str.parse::<bool>().unwrap_or_default();
         self.reverseadding = self.reverseadding_str.parse::<bool>().unwrap_or_default();
+        self.action_timeout = self.action_timeout_str.parse::<bool>().unwrap_or_default();
         self.pomodoro_time = self.pomodoro_time_table_str.parse::<u16>().unwrap();
         self.pomodoro_smallbreak = self.pomodoro_smallbreak_table_str.parse::<u16>().unwrap();
         self.pomodoro_bigbreak = self.pomodoro_bigbreak_table_str.parse::<u16>().unwrap();
         self.write_to_file().unwrap();
-    }
-
-    pub fn get_background_color(self) -> Color {
-        if self.darkmode {
-            return Color::Black;
-        } else {
-            return Color::White;
-        };
-    }
-
-    pub fn get_foreground_color(self) -> Color {
-        if self.darkmode {
-            return Color::White;
-        } else {
-            return Color::Black;
-        };
     }
 
     pub fn update_timers(&mut self) {
@@ -218,5 +211,14 @@ impl<'a> Configuration<'a> {
 
     pub fn num_rightview_timers(&mut self) -> usize {
         self.timers.iter().filter(|t| t.left_view == false).count()
+    }
+
+    pub fn check_all_timers_done(&mut self) -> bool {
+        for timer in self.timers.iter() {
+            if timer.timeleft_secs > 0 {
+                return false;
+            }
+        }
+        true
     }
 }

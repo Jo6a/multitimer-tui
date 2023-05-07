@@ -33,21 +33,23 @@ where
         .style(normal_style)
         .block(Block::default().borders(Borders::ALL));
 
-    terminal.draw(|f| {
-        let size = f.size();
-        let chunks = Layout::default()
-            .direction(Direction::Horizontal)
-            .constraints([Constraint::Percentage(100)].as_ref())
-            .split(size);
+    terminal
+        .draw(|f| {
+            let size = f.size();
+            let chunks = Layout::default()
+                .direction(Direction::Horizontal)
+                .constraints([Constraint::Percentage(100)].as_ref())
+                .split(size);
 
-        f.render_widget(paragraph, chunks[0]);
-        f.set_cursor(
-            // Put cursor past the end of the input text
-            chunks[0].x + cursor_pos as u16 + 1,
-            // Move one line down, from the border to the input line
-            chunks[0].y + 1,
-        );
-    }).unwrap();
+            f.render_widget(paragraph, chunks[0]);
+            f.set_cursor(
+                // Put cursor past the end of the input text
+                chunks[0].x + cursor_pos as u16 + 1,
+                // Move one line down, from the border to the input line
+                chunks[0].y + 1,
+            );
+        })
+        .unwrap();
 }
 
 pub fn handle_key_press(
@@ -313,6 +315,7 @@ pub fn configtab_rendering<B: Backend>(
     if config.state.selected() == None {
         config.darkmode_str = config.darkmode.to_string();
         config.reverseadding_str = config.reverseadding.to_string();
+        config.action_timeout_str = config.action_timeout.to_string();
         config.pomodoro_time_table_str = config.pomodoro_time.to_string();
         config.pomodoro_smallbreak_table_str = config.pomodoro_smallbreak.to_string();
         config.pomodoro_bigbreak_table_str = config.pomodoro_bigbreak.to_string();
@@ -322,6 +325,10 @@ pub fn configtab_rendering<B: Backend>(
         vec![
             "reverse adding of timers".to_string(),
             config.reverseadding_str.to_owned(),
+        ],
+        vec![
+            "action after timers done".to_string(),
+            config.action_timeout_str.to_owned(),
         ],
         vec![
             "pomodoro_time".to_string(),

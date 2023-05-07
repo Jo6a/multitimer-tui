@@ -1,15 +1,16 @@
 {
   "darkmode": true,
   "reverseadding": false,
+  "action_timeout": false,
   "pomodoro_time": 25,
   "pomodoro_smallbreak": 5,
   "pomodoro_bigbreak": 10,
   "timers": [
     {
       "left_view": true,
-      "description": "ewfege",
-      "timeleft_secs": 1200,
-      "endtime": "2023-05-06T22:11:25.756929011+02:00"
+      "description": "egerh",
+      "timeleft_secs": 5,
+      "endtime": "2023-05-07T16:46:49.175101547+02:00"
     }
   ]
 }

@@ -45,14 +45,13 @@ impl Timer {
         self.is_active = true;
         if self.timeleft_secs > 0 {
             self.timeleft_secs -= 1;
-        }
-
-        if self.timeleft_secs == 0 {
-            Command::new("bash")
-                .args(&["-c", "echo -e \"\\a\" "])
-                .spawn()
-                .expect("Playing sound failed");
-            self.is_active = false;
+            if self.timeleft_secs == 0 {
+                Command::new("bash")
+                    .args(&["-c", "echo -e \"\\a\" "])
+                    .spawn()
+                    .expect("Playing sound failed");
+                self.is_active = false;
+            }
         }
     }
 }

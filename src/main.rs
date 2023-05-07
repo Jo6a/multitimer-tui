@@ -1,4 +1,6 @@
+use std::env;
 use std::fs;
+use std::process::Command;
 
 use crossterm::{
     event::{self, DisableMouseCapture, Event, KeyCode},
@@ -71,6 +73,24 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, tick_rate: Duration) -> io::R
                     } else if !timer.left_view && !right_view_done && timer.timeleft_secs != 0 {
                         timer.tick();
                         right_view_done = true;
+                    }
+                }
+
+                if config.action_timeout
+                    && (left_view_done || right_view_done)
+                    && config.check_all_timers_done()
+                {
+                    let os = env::consts::OS;
+                    if os == "windows" {
+                        Command::new("rundll32.exe")
+                            .args(&["powrprof.dll,SetSuspendState", "0,1,0"])
+                            .spawn()
+                            .expect("Sleeping computer failed");
+                    } else if os == "linux" {
+                        Command::new("systemctl")
+                            .args(&["suspend"])
+                            .spawn()
+                            .expect("Sleeping computer failed");
                     }
                 }
             } else {

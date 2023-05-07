@@ -7,7 +7,7 @@ pub fn add_timer(
     routine: &str,
     config: &mut Configuration,
 ) {
-    let timer = config.create_timer_for_input(argument1, argument2, routine == "add");
+    let timer = config.create_timer_for_input(argument1, argument2, routine != "add2");
     config.add_timer_to_config(timer);
 }
 
@@ -101,7 +101,7 @@ pub fn parse_input(input: &str, config: &mut Configuration) {
     let mut argument2: String = parts.collect::<Vec<&str>>().join(" ");
 
     match routine {
-        "add" | "add2" => {
+        "a" | "add" | "add2" => {
             add_timer(&argument1, &mut argument2, routine, config);
         }
         "addp" => {
@@ -113,22 +113,22 @@ pub fn parse_input(input: &str, config: &mut Configuration) {
         "clear" => {
             config.timers.clear();
         }
-        "move" => {
+        "mv" | "move" => {
             move_timer(&argument1, &argument2, config);
         }
-        "moveup" => {
+        "mu" | "moveup" => {
             move_timer_up(&argument1, config);
         }
-        "movedown" => {
+        "md" | "movedown" => {
             move_timer_down(&argument1, config);
         }
-        "plus" => {
+        "p" | "plus" => {
             increase_timer(&argument1, &argument2, config);
         }
-        "minus" => {
+        "m" | "minus" => {
             decrease_timer(&argument1, &argument2, config);
         }
-        "rename" => {
+        "rn" | "rename" => {
             rename_timer(argument1, config, argument2);
         }
         _ => {}
