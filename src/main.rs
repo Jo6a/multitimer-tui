@@ -50,9 +50,10 @@ fn main() -> Result<(), Box<dyn Error>> {
 fn run_app<B: Backend>(terminal: &mut Terminal<B>, tick_rate: Duration) -> io::Result<()> {
     let mut last_tick = Instant::now();
     let mut input_field = InputField::new();
+
     let mut config: Configuration = fs::read_to_string("config.json")
-        .map(|data| serde_json::from_str(&data).unwrap_or_else(|_| Configuration::new(25, 5, 10)))
-        .unwrap_or_else(|_| Configuration::new(25, 5, 10));
+        .map(|data| serde_json::from_str(&data).unwrap_or(Configuration::new(25, 5, 10)))
+        .unwrap_or(Configuration::new(25, 5, 10));
 
     config.titles = vec!["Timer [1]", "Config [2]"];
     config.update_timers();
@@ -83,12 +84,12 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, tick_rate: Duration) -> io::R
                     let os = env::consts::OS;
                     if os == "windows" {
                         Command::new("rundll32.exe")
-                            .args(&["powrprof.dll,SetSuspendState", "0,1,0"])
+                            .args(["powrprof.dll,SetSuspendState", "0,1,0"])
                             .spawn()
                             .expect("Sleeping computer failed");
                     } else if os == "linux" {
                         Command::new("systemctl")
-                            .args(&["suspend"])
+                            .args(["suspend"])
                             .spawn()
                             .expect("Sleeping computer failed");
                     }
@@ -117,7 +118,7 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, tick_rate: Duration) -> io::R
                     ui::handle_key_press(key, &mut config, &mut input_field, &mut pause_flag)?;
                 }
             }
-            terminal.draw(|f| ui::ui(f, &mut config, &mut input_field))?;
+            terminal.draw(|f| ui::ui(f, &mut config, &input_field))?;
         }
         i += 1;
     }

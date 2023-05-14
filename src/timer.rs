@@ -36,7 +36,7 @@ impl Timer {
             minutes,
             seconds,
             self.endtime.format("%Y-%m-%d %H:%M:%S"),
-            self.id.to_string(),
+            self.id,
             self.description
         )
     }
@@ -47,7 +47,7 @@ impl Timer {
             self.timeleft_secs -= 1;
             if self.timeleft_secs == 0 {
                 Command::new("bash")
-                    .args(&["-c", "echo -e \"\\a\" "])
+                    .args(["-c", "echo -e \"\\a\" "])
                     .spawn()
                     .expect("Playing sound failed");
                 self.is_active = false;

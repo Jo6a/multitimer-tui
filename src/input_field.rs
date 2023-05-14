@@ -3,6 +3,12 @@ pub struct InputField {
     pub cursor_position: usize,
 }
 
+impl Default for InputField {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl InputField {
     pub fn new() -> Self {
         Self {

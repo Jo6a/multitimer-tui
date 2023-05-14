@@ -12,7 +12,7 @@ use tui::{
     Frame, Terminal,
 };
 
-use crate::color::{get_background_color, get_foreground_color};
+use crate::color::{get_background_color, get_foreground_color, get_active_color};
 use crate::configuration::Configuration;
 use crate::input_field::InputField;
 use crate::timer::Timer;
@@ -29,7 +29,7 @@ where
 
     let text = format!("{}{}{}", left, "█", right);
 
-    let paragraph = Paragraph::new(text.as_ref())
+    let paragraph = Paragraph::new(text)
         .style(normal_style)
         .block(Block::default().borders(Borders::ALL));
 
@@ -58,7 +58,7 @@ pub fn handle_key_press(
     input_field: &mut InputField,
     pause_flag: &mut bool,
 ) -> Result<(), io::Error> {
-    Ok(if config.index == 0 {
+    if config.index == 0 {
         if input_field.content.is_empty() && KeyCode::Char('h') == key.code {
             config.show_popup = !config.show_popup;
         } else if let KeyCode::Left = key.code {
@@ -95,7 +95,8 @@ pub fn handle_key_press(
         } else if let KeyCode::Down = key.code {
             config.next_table_entry();
         }
-    })
+    };
+    Ok(())
 }
 
 pub fn ui<B: Backend>(f: &mut Frame<B>, config: &mut Configuration, input_field: &InputField) {
@@ -108,16 +109,8 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, config: &mut Configuration, input_field:
     f.render_widget(block, size);
     let len_right_view_timers = config.num_rightview_timers();
     let len_left_view_timers = config.timers.len() - len_right_view_timers;
-    let left_view_timers: Vec<&Timer> = config
-        .timers
-        .iter()
-        .filter(|t| t.left_view == true)
-        .collect();
-    let right_view_timers: Vec<&Timer> = config
-        .timers
-        .iter()
-        .filter(|t| t.left_view == false)
-        .collect();
+    let left_view_timers: Vec<&Timer> = config.timers.iter().filter(|t| t.left_view).collect();
+    let right_view_timers: Vec<&Timer> = config.timers.iter().filter(|t| !t.left_view).collect();
     let mut constraints_vec = Vec::new();
     let mut constraints_vec2 = Vec::new();
     constraints_vec.push(Constraint::Percentage(3));
@@ -169,11 +162,11 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, config: &mut Configuration, input_field:
         .highlight_style(
             Style::default()
                 .add_modifier(Modifier::BOLD)
-                .bg(Color::Yellow),
+                .bg(get_active_color(&config.activecolor)),
         );
 
     if len_right_view_timers > 0 {
-        size.width = size.width / 2;
+        size.width /= 2;
     }
 
     let chunks = Layout::default()
@@ -194,7 +187,7 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, config: &mut Configuration, input_field:
             .direction(Direction::Vertical)
             .constraints(constraints_vec2)
             .split(size);
-        size.width = size.width * 2;
+        size.width *= 2;
         size.x = 0;
     }
 
@@ -206,7 +199,7 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, config: &mut Configuration, input_field:
                 .style(
                     Style::default()
                         .fg(if left_view_timers[i - 1].is_active {
-                            Color::Yellow
+                            get_active_color(&config.activecolor)
                         } else {
                             Color::DarkGray
                         })
@@ -247,7 +240,7 @@ pub fn timertab_rendering<B: Backend>(
                 .style(
                     Style::default()
                         .fg(if right_view_timers[i - 1].is_active {
-                            Color::Yellow
+                            get_active_color(&config.activecolor)
                         } else {
                             Color::DarkGray
                         })
@@ -259,7 +252,7 @@ pub fn timertab_rendering<B: Backend>(
     let input = Paragraph::new(input_field.content.as_ref())
         .style(
             Style::default()
-                .fg(Color::Yellow)
+                .fg(get_active_color(&config.activecolor))
                 .bg(get_background_color(config.darkmode)),
         )
         .block(Block::default().borders(Borders::ALL).title("Input"));
@@ -309,11 +302,12 @@ pub fn configtab_rendering<B: Backend>(
         .iter()
         .map(|h| Cell::from(*h).style(Style::default().fg(get_foreground_color(config.darkmode))));
     let header = Row::new(header_cells)
-        .style(Style::default().bg(Color::Yellow))
+        .style(Style::default().bg(get_active_color(&config.activecolor)))
         .height(1)
         .bottom_margin(2);
-    if config.state.selected() == None {
+    if config.state.selected().is_none() {
         config.darkmode_str = config.darkmode.to_string();
+        config.activecolor_str = config.activecolor.clone();
         config.reverseadding_str = config.reverseadding.to_string();
         config.action_timeout_str = config.action_timeout.to_string();
         config.pomodoro_time_table_str = config.pomodoro_time.to_string();
@@ -322,6 +316,7 @@ pub fn configtab_rendering<B: Backend>(
     }
     let items = vec![
         vec!["darkmode".to_string(), config.darkmode_str.to_owned()],
+        vec!["active color".to_string(), config.activecolor_str.to_owned()],
         vec![
             "reverse adding of timers".to_string(),
             config.reverseadding_str.to_owned(),
@@ -370,7 +365,7 @@ pub fn configtab_rendering<B: Backend>(
         text,
         Style::default()
             .add_modifier(Modifier::ITALIC)
-            .fg(Color::Yellow)
+            .fg(get_active_color(&config.activecolor))
             .bg(get_background_color(config.darkmode)),
     ))
     .alignment(Alignment::Center)

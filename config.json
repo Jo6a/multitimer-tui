@@ -1,5 +1,6 @@
 {
   "darkmode": true,
+  "activecolor": "Magenta",
   "reverseadding": false,
   "action_timeout": false,
   "pomodoro_time": 25,
@@ -8,9 +9,15 @@
   "timers": [
     {
       "left_view": true,
-      "description": "egerh",
-      "timeleft_secs": 5,
-      "endtime": "2023-05-07T16:46:49.175101547+02:00"
+      "description": "ergerg",
+      "timeleft_secs": 663,
+      "endtime": "2023-05-14T19:51:48.474533097+02:00"
+    },
+    {
+      "left_view": true,
+      "description": "egre",
+      "timeleft_secs": 1200,
+      "endtime": "2023-05-14T20:11:48.474533097+02:00"
     }
   ]
 }

@@ -31,13 +31,13 @@ pub fn add_pomodoro_timer(config: &mut Configuration) {
     config.add_timer_to_config(timer2);
 }
 
-pub fn remove_timer(argument1: &String, config: &mut Configuration) {
+pub fn remove_timer(argument1: &str, config: &mut Configuration) {
     if let Ok(id) = argument1.parse::<u16>() {
         config.timers.retain(|t| t.id != id);
     }
 }
 
-pub fn move_timer(argument1: &String, argument2: &String, config: &mut Configuration) {
+pub fn move_timer(argument1: &str, argument2: &str, config: &mut Configuration) {
     if let (Ok(id), Ok(id2)) = (
         argument1[..].parse::<usize>(),
         argument2[..].parse::<usize>(),
@@ -47,19 +47,39 @@ pub fn move_timer(argument1: &String, argument2: &String, config: &mut Configura
     }
 }
 
-pub fn move_timer_up(argument1: &String, config: &mut Configuration) {
-    let id = argument1[..].parse::<usize>().unwrap();
+pub fn move_timer_up(argument1: &str, config: &mut Configuration) {
+    let id = match argument1[..].parse::<usize>() {
+        Ok(id) => id,
+        Err(_) => {
+            return;
+        }
+    };
     config.timers.swap(id, id - 1);
 }
 
-pub fn move_timer_down(argument1: &String, config: &mut Configuration) {
-    let id = argument1[..].parse::<usize>().unwrap();
+pub fn move_timer_down(argument1: &str, config: &mut Configuration) {
+    let id = match argument1[..].parse::<usize>() {
+        Ok(id) => id,
+        Err(_) => {
+            return;
+        }
+    };
     config.timers.swap(id, id + 1);
 }
 
-pub fn increase_timer(argument1: &String, argument2: &String, config: &mut Configuration) {
-    let id = argument1[..].parse::<u16>().unwrap();
-    let min = argument2[..].parse::<u16>().unwrap();
+pub fn increase_timer(argument1: &str, argument2: &str, config: &mut Configuration) {
+    let id = match argument1[..].parse::<u16>() {
+        Ok(id) => id,
+        Err(_) => {
+            return;
+        }
+    };
+    let min = match argument2[..].parse::<u16>() {
+        Ok(min) => min,
+        Err(_) => {
+            return;
+        }
+    };
     for t in &mut config.timers {
         if t.id == id {
             t.timeleft_secs += min * 60;
@@ -68,9 +88,19 @@ pub fn increase_timer(argument1: &String, argument2: &String, config: &mut Confi
     }
 }
 
-pub fn decrease_timer(argument1: &String, argument2: &String, config: &mut Configuration) {
-    let id = argument1[..].parse::<u16>().unwrap();
-    let min = argument2[..].parse::<u16>().unwrap();
+pub fn decrease_timer(argument1: &str, argument2: &str, config: &mut Configuration) {
+    let id = match argument1[..].parse::<u16>() {
+        Ok(id) => id,
+        Err(_) => {
+            return;
+        }
+    };
+    let min = match argument2[..].parse::<u16>() {
+        Ok(min) => min,
+        Err(_) => {
+            return;
+        }
+    };
     for t in &mut config.timers {
         if t.id == id {
             if t.timeleft_secs < min * 60 {
