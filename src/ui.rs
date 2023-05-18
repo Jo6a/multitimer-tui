@@ -12,7 +12,7 @@ use tui::{
     Frame, Terminal,
 };
 
-use crate::color::{get_background_color, get_foreground_color, get_active_color};
+use crate::color::{get_active_color, get_background_color, get_foreground_color};
 use crate::configuration::Configuration;
 use crate::input_field::InputField;
 use crate::timer::Timer;
@@ -309,32 +309,38 @@ pub fn configtab_rendering<B: Backend>(
         config.darkmode_str = config.darkmode.to_string();
         config.activecolor_str = config.activecolor.clone();
         config.reverseadding_str = config.reverseadding.to_string();
-        config.action_timeout_str = config.action_timeout.to_string();
+        config.action_timeout_str = config.action_timeout.clone();
         config.pomodoro_time_table_str = config.pomodoro_time.to_string();
         config.pomodoro_smallbreak_table_str = config.pomodoro_smallbreak.to_string();
         config.pomodoro_bigbreak_table_str = config.pomodoro_bigbreak.to_string();
     }
     let items = vec![
-        vec!["darkmode".to_string(), config.darkmode_str.to_owned()],
-        vec!["active color".to_string(), config.activecolor_str.to_owned()],
         vec![
-            "reverse adding of timers".to_string(),
+            "darkmode [true, false]".to_string(),
+            config.darkmode_str.to_owned(),
+        ],
+        vec![
+            "active color [Red, Green, Blue, etc.]".to_string(),
+            config.activecolor_str.to_owned(),
+        ],
+        vec![
+            "reverse adding of timers [true, false]".to_string(),
             config.reverseadding_str.to_owned(),
         ],
         vec![
-            "action after timers done".to_string(),
+            "action after timers done [None, Hibernate, Shutdown]".to_string(),
             config.action_timeout_str.to_owned(),
         ],
         vec![
-            "pomodoro_time".to_string(),
+            "pomodoro_time [int]".to_string(),
             config.pomodoro_time_table_str.to_owned(),
         ],
         vec![
-            "pomodoro_smallbreak".to_string(),
+            "pomodoro_smallbreak [int]".to_string(),
             config.pomodoro_smallbreak_table_str.to_owned(),
         ],
         vec![
-            "pomodoro_bigbreak".to_string(),
+            "pomodoro_bigbreak [int]".to_string(),
             config.pomodoro_bigbreak_table_str.to_owned(),
         ],
     ];

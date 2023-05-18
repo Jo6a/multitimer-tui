@@ -9,7 +9,7 @@ pub struct Configuration<'a> {
     pub darkmode: bool,
     pub activecolor: String,
     pub reverseadding: bool,
-    pub action_timeout: bool,
+    pub action_timeout: String,
     pub pomodoro_time: u16,
     pub pomodoro_smallbreak: u16,
     pub pomodoro_bigbreak: u16,
@@ -50,9 +50,9 @@ impl<'a> Configuration<'a> {
             pomodoro_bigbreak,
             timers: Vec::new(),
             darkmode: true,
-            activecolor: "Yellow".to_string(),
+            activecolor: "Green".to_string(),
             reverseadding: false,
-            action_timeout: false,
+            action_timeout: "None".to_string(),
             show_popup: false,
             titles: Vec::new(),
             index: 0,
@@ -86,7 +86,7 @@ impl<'a> Configuration<'a> {
     pub fn next_table_entry(&mut self) {
         let i = match self.state.selected() {
             Some(i) => {
-                if i >= 5 - 1 {
+                if i >= 7 - 1 {
                     0
                 } else {
                     i + 1
@@ -101,7 +101,7 @@ impl<'a> Configuration<'a> {
         let i = match self.state.selected() {
             Some(i) => {
                 if i == 0 {
-                    5 - 1
+                    7 - 1
                 } else {
                     i - 1
                 }
@@ -154,7 +154,7 @@ impl<'a> Configuration<'a> {
         self.darkmode = self.darkmode_str.parse::<bool>().unwrap_or_default();
         self.activecolor = self.activecolor_str.clone();
         self.reverseadding = self.reverseadding_str.parse::<bool>().unwrap_or_default();
-        self.action_timeout = self.action_timeout_str.parse::<bool>().unwrap_or_default();
+        self.action_timeout = self.action_timeout_str.clone();
         self.pomodoro_time = self.pomodoro_time_table_str.parse::<u16>().unwrap();
         self.pomodoro_smallbreak = self.pomodoro_smallbreak_table_str.parse::<u16>().unwrap();
         self.pomodoro_bigbreak = self.pomodoro_bigbreak_table_str.parse::<u16>().unwrap();

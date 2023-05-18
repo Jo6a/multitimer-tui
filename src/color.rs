@@ -17,23 +17,23 @@ pub fn get_foreground_color(darkmode: bool) -> Color {
 }
 
 pub fn get_active_color(colorstr: &str) -> Color {
-    match colorstr {
-        "Red" => Color::Red,
-        "Yellow" => Color::Yellow,
-        "Green" => Color::Green,
-        "Blue" => Color::Blue,
-        "Black" => Color::Black,
-        "White" => Color::White,
-        "LightGreen" => Color::LightGreen,
-        "LightBlue" => Color::LightBlue,
-        "LightRed" => Color::LightRed,
-        "LightCyan" => Color::LightCyan,
-        "LightMagenta" => Color::LightMagenta,
-        "LightYellow" => Color::LightYellow,
-        "Gray" => Color::Gray,
-        "DarkGray" => Color::DarkGray,
-        "Magenta" => Color::Magenta,
-        "Cyan" => Color::Cyan,
-        _ => Color::Yellow
+    match colorstr.to_lowercase().as_str() {
+        "red" => Color::Red,
+        "yellow" => Color::Yellow,
+        "green" => Color::Green,
+        "blue" => Color::Blue,
+        "black" => Color::Black,
+        "white" => Color::White,
+        "lightgreen" => Color::LightGreen,
+        "lightblue" => Color::LightBlue,
+        "lightred" => Color::LightRed,
+        "lightcyan" => Color::LightCyan,
+        "lightmagenta" => Color::LightMagenta,
+        "lightyellow" => Color::LightYellow,
+        "gray" => Color::Gray,
+        "darkgray" => Color::DarkGray,
+        "magenta" => Color::Magenta,
+        "cyan" => Color::Cyan,
+        _ => Color::Green,
     }
 }

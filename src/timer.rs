@@ -51,6 +51,16 @@ impl Timer {
                     .spawn()
                     .expect("Playing sound failed");
                 self.is_active = false;
+
+                if cfg!(target_os = "linux") {
+                    let _ = Command::new("notify-send")
+                        .args(&["Timer beendet", &self.description])
+                        .spawn();
+                } else if cfg!(target_os = "windows") {
+                    let _ = Command::new("msg")
+                        .args(&["*", "Timer beendet", &self.description])
+                        .spawn();
+                }
             }
         }
     }

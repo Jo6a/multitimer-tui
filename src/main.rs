@@ -77,21 +77,31 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, tick_rate: Duration) -> io::R
                     }
                 }
 
-                if config.action_timeout
+                if config.action_timeout != "None"
                     && (left_view_done || right_view_done)
                     && config.check_all_timers_done()
                 {
                     let os = env::consts::OS;
-                    if os == "windows" {
+                    if os == "windows" && config.action_timeout == "Hibernate" {
                         Command::new("rundll32.exe")
                             .args(["powrprof.dll,SetSuspendState", "0,1,0"])
                             .spawn()
                             .expect("Sleeping computer failed");
-                    } else if os == "linux" {
+                    } else if os == "linux" && config.action_timeout == "Hibernate" {
                         Command::new("systemctl")
                             .args(["suspend"])
                             .spawn()
                             .expect("Sleeping computer failed");
+                    } else if os == "windows" && config.action_timeout == "Shutdown" {
+                        Command::new("shutdown")
+                            .args(["/s", "/t", "0"])
+                            .spawn()
+                            .expect("Shutting down failed");
+                    } else if os == "linux" && config.action_timeout == "Shutdown" {
+                        Command::new("shutdown")
+                            .args(["-h", "now"])
+                            .spawn()
+                            .expect("Shutting down failed");
                     }
                 }
             } else {

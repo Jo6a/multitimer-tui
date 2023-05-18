@@ -1,23 +1,10 @@
 {
   "darkmode": true,
-  "activecolor": "Magenta",
+  "activecolor": "Green",
   "reverseadding": false,
-  "action_timeout": false,
+  "action_timeout": "None",
   "pomodoro_time": 25,
   "pomodoro_smallbreak": 5,
   "pomodoro_bigbreak": 10,
-  "timers": [
-    {
-      "left_view": true,
-      "description": "ergerg",
-      "timeleft_secs": 663,
-      "endtime": "2023-05-14T19:51:48.474533097+02:00"
-    },
-    {
-      "left_view": true,
-      "description": "egre",
-      "timeleft_secs": 1200,
-      "endtime": "2023-05-14T20:11:48.474533097+02:00"
-    }
-  ]
+  "timers": []
 }
