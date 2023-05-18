@@ -2,9 +2,58 @@
   "darkmode": true,
   "activecolor": "Green",
   "reverseadding": false,
-  "action_timeout": "None",
+  "action_timeout": false,
   "pomodoro_time": 25,
   "pomodoro_smallbreak": 5,
   "pomodoro_bigbreak": 10,
-  "timers": []
+  "timers": [
+    {
+      "left_view": true,
+      "description": "diss",
+      "timeleft_secs": 0,
+      "endtime": "2023-05-18T13:49:11.279547069+02:00"
+    },
+    {
+      "left_view": true,
+      "description": "spazieren",
+      "timeleft_secs": 0,
+      "endtime": "2023-05-18T14:58:11.279547069+02:00"
+    },
+    {
+      "left_view": true,
+      "description": "daily+",
+      "timeleft_secs": 0,
+      "endtime": "2023-05-18T15:56:35.821216873+02:00"
+    },
+    {
+      "left_view": true,
+      "description": "rust",
+      "timeleft_secs": 0,
+      "endtime": "2023-05-18T16:54:44.433677953+02:00"
+    },
+    {
+      "left_view": true,
+      "description": "lesen",
+      "timeleft_secs": 969,
+      "endtime": "2023-05-18T17:16:44.433677953+02:00"
+    },
+    {
+      "left_view": true,
+      "description": "bingsprechenplus",
+      "timeleft_secs": 5100,
+      "endtime": "2023-05-18T18:41:44.433677953+02:00"
+    },
+    {
+      "left_view": true,
+      "description": "puffer",
+      "timeleft_secs": 4680,
+      "endtime": "2023-05-18T19:59:44.433677953+02:00"
+    },
+    {
+      "left_view": true,
+      "description": "telefonieren+co",
+      "timeleft_secs": 9000,
+      "endtime": "2023-05-18T22:29:44.433677953+02:00"
+    }
+  ]
 }

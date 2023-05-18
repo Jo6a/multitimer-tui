@@ -179,8 +179,8 @@ impl<'a> Configuration<'a> {
         }
     }
 
-    pub fn add_timer_to_config(&mut self, timer: Timer) {
-        if self.reverseadding {
+    pub fn add_timer_to_config(&mut self, timer: Timer, reverse_adding: bool) {
+        if (self.reverseadding && !reverse_adding) || (!self.reverseadding && reverse_adding) {
             self.timers.insert(0, timer);
         } else {
             self.timers.push(timer);

@@ -6,9 +6,10 @@ pub fn add_timer(
     argument2: &mut String,
     routine: &str,
     config: &mut Configuration,
+    reverse_adding : bool,
 ) {
     let timer = config.create_timer_for_input(argument1, argument2, routine != "add2");
-    config.add_timer_to_config(timer);
+    config.add_timer_to_config(timer, reverse_adding);
 }
 
 pub fn add_pomodoro_timer(config: &mut Configuration) {
@@ -27,8 +28,8 @@ pub fn add_pomodoro_timer(config: &mut Configuration) {
         true,
     );
 
-    config.add_timer_to_config(timer1);
-    config.add_timer_to_config(timer2);
+    config.add_timer_to_config(timer1, false);
+    config.add_timer_to_config(timer2, false);
 }
 
 pub fn remove_timer(argument1: &str, config: &mut Configuration) {
@@ -132,7 +133,10 @@ pub fn parse_input(input: &str, config: &mut Configuration) {
 
     match routine {
         "a" | "add" | "add2" => {
-            add_timer(&argument1, &mut argument2, routine, config);
+            add_timer(&argument1, &mut argument2, routine, config, false);
+        }
+        "ar" | "addr" => {
+            add_timer(&argument1, &mut argument2, routine, config, true);
         }
         "addp" => {
             add_pomodoro_timer(config);

@@ -9,7 +9,7 @@ use tui::{
     style::{Color, Modifier, Style},
     text::{Span, Spans},
     widgets::{Block, Borders, Cell, Clear, Paragraph, Row, Table, Tabs, Wrap},
-    Frame, Terminal,
+    Frame,
 };
 
 use crate::color::{get_active_color, get_background_color, get_foreground_color};
@@ -17,40 +17,6 @@ use crate::configuration::Configuration;
 use crate::input_field::InputField;
 use crate::timer::Timer;
 use crate::timer_logic::parse_input;
-
-pub fn draw_input_field<B>(terminal: &mut Terminal<B>, input_field: &InputField)
-where
-    B: Backend,
-{
-    let normal_style = Style::default().fg(Color::White);
-
-    let cursor_pos = input_field.cursor_position;
-    let (left, right) = input_field.content.split_at(cursor_pos);
-
-    let text = format!("{}{}{}", left, "█", right);
-
-    let paragraph = Paragraph::new(text)
-        .style(normal_style)
-        .block(Block::default().borders(Borders::ALL));
-
-    terminal
-        .draw(|f| {
-            let size = f.size();
-            let chunks = Layout::default()
-                .direction(Direction::Horizontal)
-                .constraints([Constraint::Percentage(100)].as_ref())
-                .split(size);
-
-            f.render_widget(paragraph, chunks[0]);
-            f.set_cursor(
-                // Put cursor past the end of the input text
-                chunks[0].x + cursor_pos as u16 + 1,
-                // Move one line down, from the border to the input line
-                chunks[0].y + 1,
-            );
-        })
-        .unwrap();
-}
 
 pub fn handle_key_press(
     key: KeyEvent,
@@ -75,10 +41,8 @@ pub fn handle_key_press(
             input_field.content.clear();
             input_field.cursor_position = 0;
         } else if let KeyCode::Char(c) = key.code {
-            //input_field.content.push(c);
             input_field.insert_char(c);
         } else if let KeyCode::Backspace = key.code {
-            //input_field.content.pop();
             input_field.delete_char();
         }
     } else if config.index == 1 {
@@ -165,16 +129,6 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, config: &mut Configuration, input_field:
                 .bg(get_active_color(&config.activecolor)),
         );
 
-    if len_right_view_timers > 0 {
-        size.width /= 2;
-    }
-
-    let chunks = Layout::default()
-        .direction(Direction::Vertical)
-        .constraints(constraints_vec)
-        .split(size);
-    f.render_widget(tabs, chunks[0]);
-
     let chunks_index1 = Layout::default()
         .direction(Direction::Vertical)
         .constraints(vec![Constraint::Percentage(3), Constraint::Percentage(80)])
@@ -182,20 +136,29 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, config: &mut Configuration, input_field:
 
     let mut chunks2: Vec<Rect> = Vec::new();
     if len_right_view_timers > 0 {
-        size.x = size.width;
+        let mut size2 = size.clone();
+        size2.x = size.width / 2;
+        size2.width /= 2;
         chunks2 = Layout::default()
             .direction(Direction::Vertical)
             .constraints(constraints_vec2)
-            .split(size);
-        size.width *= 2;
-        size.x = 0;
+            .split(size2);
     }
 
     if config.index == 0 {
         /* loop for timers */
+        if len_right_view_timers > 0 {
+            size.width /= 2;
+        }
+        let chunks = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints(&*constraints_vec)
+        .split(size);
+        f.render_widget(tabs, chunks[0]);
+        
         for i in 1..chunks.len() - 1 {
             let paragraph = Paragraph::new(left_view_timers[i - 1].formatted())
-                .block(Block::default().borders(Borders::TOP))
+            .block(Block::default().borders(Borders::TOP))
                 .style(
                     Style::default()
                         .fg(if left_view_timers[i - 1].is_active {
@@ -207,6 +170,13 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, config: &mut Configuration, input_field:
                 );
             f.render_widget(paragraph, chunks[i]);
         }
+        if len_right_view_timers > 0 {
+            size.width *= 2;
+        }
+        let chunks = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints(constraints_vec)
+        .split(size);
         timertab_rendering(
             len_right_view_timers,
             chunks2,
@@ -217,6 +187,7 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, config: &mut Configuration, input_field:
             config,
             size,
         );
+        
     } else if config.index == 1 {
         configtab_rendering(config, f, chunks_index1);
     }
