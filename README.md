@@ -12,12 +12,12 @@ This project is compatible with Windows and Linux operating systems. It uses dif
 
 This project has several features that make it a useful and versatile tool for managing timers. Some of these features are:
 
-- Modifying timers ✏️: Modify existing timers in various ways. 
-- Pausing and resuming timers ⏯️: Pause or resume all timers by pressing Space.
-- Pomodoro timers 🍅: Pomodoro timers are supported, which are a popular technique for time management and productivity.
-- Actions after all timers done ⚡: The user can choose from three options: None, Hibernate or Shutdown.
-- Sound and notification 🔊: Sound is played and a notification is displayed (if supported by the system) when a timer expires.
-- Saving the configuration and timers 💾: Settings and timers are preserved across different sessions.
+- ✏️ Modify existing timers in various ways. 
+- ⏯️ Pause or resume all timers by pressing Space.
+- 🍅 Pomodoro timers are supported, which are a popular technique for time management and productivity.
+- ⚡ Actions after all timers done: None, Hibernate or Shutdown.
+- 🔊 Sound is played and a notification is displayed (if supported by the system) when a timer expires.
+- 💾 Saving the configuration and timers to preserve timers and settings across different sessions.
 
 ## Usage
 
