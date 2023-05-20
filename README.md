@@ -18,6 +18,8 @@ This project has several features that make it a useful and versatile tool for m
 - ⚡ Actions after all timers done: None, Hibernate or Shutdown.
 - 🔊 Sound is played and a notification is displayed (if supported by the system) when a timer expires.
 - 💾 Saving the configuration and timers to preserve timers and settings across different sessions.
+- 🎨 Choose a color theme for active timers.
+- 🌑 Switch between dark mode and light mode.
 
 ## Usage
 
