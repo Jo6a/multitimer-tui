@@ -82,7 +82,7 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, tick_rate: Duration) -> io::R
                     && config.check_all_timers_done()
                 {
                     let os = env::consts::OS;
-                    if os == "windows" && config.action_timeout == "Hibernate" {
+                    if os == "linux" && config.action_timeout == "Hibernate" {
                         Command::new("rundll32.exe")
                             .args(["powrprof.dll,SetSuspendState", "0,1,0"])
                             .spawn()

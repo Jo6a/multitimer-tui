@@ -145,17 +145,17 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, config: &mut Configuration, input_field:
             .split(size2);
     }
 
+    if len_right_view_timers > 0 {
+        size.width /= 2;
+    }
+    let chunks = Layout::default()
+    .direction(Direction::Vertical)
+    .constraints(&*constraints_vec)
+    .split(size);
+    f.render_widget(tabs, chunks[0]);
+
     if config.index == 0 {
         /* loop for timers */
-        if len_right_view_timers > 0 {
-            size.width /= 2;
-        }
-        let chunks = Layout::default()
-        .direction(Direction::Vertical)
-        .constraints(&*constraints_vec)
-        .split(size);
-        f.render_widget(tabs, chunks[0]);
-        
         for i in 1..chunks.len() - 1 {
             let paragraph = Paragraph::new(left_view_timers[i - 1].formatted())
             .block(Block::default().borders(Borders::TOP))
@@ -228,9 +228,7 @@ pub fn timertab_rendering<B: Backend>(
         )
         .block(Block::default().borders(Borders::ALL).title("Input"));
     f.set_cursor(
-        // Put cursor past the end of the input text
         chunks[0].x + input_field.cursor_position as u16 + 1,
-        // Move one line down, from the border to the input line
         chunks[chunks.len() - 1].y + 1,
     );
     f.render_widget(input, chunks[chunks.len() - 1]);
@@ -275,7 +273,7 @@ pub fn configtab_rendering<B: Backend>(
     let header = Row::new(header_cells)
         .style(Style::default().bg(get_active_color(&config.activecolor)))
         .height(1)
-        .bottom_margin(2);
+        .bottom_margin(1);
     if config.state.selected().is_none() {
         config.darkmode_str = config.darkmode.to_string();
         config.activecolor_str = config.activecolor.clone();
