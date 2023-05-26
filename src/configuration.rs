@@ -164,18 +164,39 @@ impl<'a> Configuration<'a> {
     pub fn update_timers(&mut self) {
         let mut dt = Local::now();
         let mut dt2 = dt;
+        let mut last_left = None;
+        let mut last_right = None;
         for (i, timer) in self.timers.iter_mut().enumerate() {
             if timer.timeleft_secs != 0 {
                 if timer.left_view {
                     dt += chrono::Duration::seconds(timer.timeleft_secs as i64);
                     timer.endtime = dt;
+                    last_left = Some(i);
                 } else {
                     dt2 += chrono::Duration::seconds(timer.timeleft_secs as i64);
                     timer.endtime = dt2;
+                    last_right = Some(i);
                 }
             }
             timer.id = i as u16;
             timer.is_active = false;
+            timer.action_info = String::new();
+        }
+        if self.action_timeout != "None" {
+            let action_display = match self.action_timeout.as_str() {
+                "Hibernate" => "(H)",
+                "Shutdown" => "(S)",
+                _ => "",
+            };
+            if let (Some(left), Some(right)) = (last_left, last_right) {
+                if self.timers[left].timeleft_secs > self.timers[right].timeleft_secs {
+                    self.timers[left].action_info = action_display.to_string();
+                } else {
+                    self.timers[right].action_info = action_display.to_string();
+                }
+            } else if let Some(i) = last_left.or(last_right) {
+                self.timers[i].action_info = action_display.to_string();
+            }
         }
     }
 

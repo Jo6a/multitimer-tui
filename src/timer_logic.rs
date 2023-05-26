@@ -6,7 +6,7 @@ pub fn add_timer(
     argument2: &mut String,
     routine: &str,
     config: &mut Configuration,
-    reverse_adding : bool,
+    reverse_adding: bool,
 ) {
     let timer = config.create_timer_for_input(argument1, argument2, routine != "add2");
     config.add_timer_to_config(timer, reverse_adding);

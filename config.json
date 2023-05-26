@@ -9,27 +9,33 @@
   "timers": [
     {
       "left_view": true,
-      "description": "diss",
-      "timeleft_secs": 0,
-      "endtime": "2023-05-20T15:49:20.451244701+02:00"
-    },
-    {
-      "left_view": true,
       "description": "rust",
-      "timeleft_secs": 3571,
-      "endtime": "2023-05-20T18:26:27.283408390+02:00"
+      "timeleft_secs": 0,
+      "endtime": "2023-05-26T17:34:29.740808229+02:00"
     },
     {
       "left_view": true,
-      "description": "spazieren",
-      "timeleft_secs": 3600,
-      "endtime": "2023-05-20T19:26:27.283408390+02:00"
+      "description": "dailyQuick",
+      "timeleft_secs": 4163,
+      "endtime": "2023-05-26T18:44:29.740808229+02:00"
     },
     {
       "left_view": true,
-      "description": "puffer",
-      "timeleft_secs": 3900,
-      "endtime": "2023-05-20T20:31:27.283408390+02:00"
+      "description": "yoga",
+      "timeleft_secs": 600,
+      "endtime": "2023-05-26T18:54:29.740808229+02:00"
+    },
+    {
+      "left_view": true,
+      "description": "diss",
+      "timeleft_secs": 1800,
+      "endtime": "2023-05-26T19:24:29.740808229+02:00"
+    },
+    {
+      "left_view": true,
+      "description": "daily+(huberman nur kurz)",
+      "timeleft_secs": 1800,
+      "endtime": "2023-05-26T19:54:29.740808229+02:00"
     }
   ]
 }

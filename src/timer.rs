@@ -12,6 +12,7 @@ pub struct Timer {
     pub description: String,
     pub timeleft_secs: u16,
     pub endtime: DateTime<Local>,
+    pub action_info: String,
 }
 
 impl Timer {
@@ -23,6 +24,7 @@ impl Timer {
             description,
             timeleft_secs,
             endtime: Local::now(),
+            action_info: String::new(),
         }
     }
 
@@ -31,11 +33,12 @@ impl Timer {
         let minutes = (self.timeleft_secs % 3600) / 60;
         let seconds = self.timeleft_secs % 60;
         format!(
-            "{:02}:{:02}:{:02} ({})         @{}:{}",
+            "{:02}:{:02}:{:02} ({}){}         @{}:{}",
             hours,
             minutes,
             seconds,
             self.endtime.format("%Y-%m-%d %H:%M:%S"),
+            self.action_info,
             self.id,
             self.description
         )

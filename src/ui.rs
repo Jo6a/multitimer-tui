@@ -149,16 +149,16 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, config: &mut Configuration, input_field:
         size.width /= 2;
     }
     let chunks = Layout::default()
-    .direction(Direction::Vertical)
-    .constraints(&*constraints_vec)
-    .split(size);
+        .direction(Direction::Vertical)
+        .constraints(&*constraints_vec)
+        .split(size);
     f.render_widget(tabs, chunks[0]);
 
     if config.index == 0 {
         /* loop for timers */
         for i in 1..chunks.len() - 1 {
             let paragraph = Paragraph::new(left_view_timers[i - 1].formatted())
-            .block(Block::default().borders(Borders::TOP))
+                .block(Block::default().borders(Borders::TOP))
                 .style(
                     Style::default()
                         .fg(if left_view_timers[i - 1].is_active {
@@ -174,9 +174,9 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, config: &mut Configuration, input_field:
             size.width *= 2;
         }
         let chunks = Layout::default()
-        .direction(Direction::Vertical)
-        .constraints(constraints_vec)
-        .split(size);
+            .direction(Direction::Vertical)
+            .constraints(constraints_vec)
+            .split(size);
         timertab_rendering(
             len_right_view_timers,
             chunks2,
@@ -187,7 +187,6 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, config: &mut Configuration, input_field:
             config,
             size,
         );
-        
     } else if config.index == 1 {
         configtab_rendering(config, f, chunks_index1);
     }
