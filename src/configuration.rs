@@ -180,7 +180,7 @@ impl<'a> Configuration<'a> {
             }
             timer.id = i as u16;
             timer.is_active = false;
-            timer.action_info = String::new();
+            timer.action_info = "   ".to_string();
         }
         if self.action_timeout != "None" {
             let action_display = match self.action_timeout.as_str() {

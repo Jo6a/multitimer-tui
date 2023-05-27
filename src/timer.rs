@@ -11,7 +11,9 @@ pub struct Timer {
     pub left_view: bool,
     pub description: String,
     pub timeleft_secs: u16,
+    #[serde(skip_serializing, skip_deserializing)]
     pub endtime: DateTime<Local>,
+    #[serde(skip_serializing, skip_deserializing)]
     pub action_info: String,
 }
 
@@ -24,7 +26,7 @@ impl Timer {
             description,
             timeleft_secs,
             endtime: Local::now(),
-            action_info: String::new(),
+            action_info: "   ".to_string(),
         }
     }
 
@@ -33,7 +35,7 @@ impl Timer {
         let minutes = (self.timeleft_secs % 3600) / 60;
         let seconds = self.timeleft_secs % 60;
         format!(
-            "{:02}:{:02}:{:02} ({}){}         @{}:{}",
+            "{:02}:{:02}:{:02} ({}){}     @{}:{}",
             hours,
             minutes,
             seconds,
