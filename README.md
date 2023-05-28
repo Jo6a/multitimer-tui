@@ -25,21 +25,22 @@ This project has several features that make it a useful and versatile tool for m
 
 You will see a TUI with two tabs: Timer and Config. You can switch between them by pressing Tab. You can create new timers by entering commands in the input line at the bottom of the screen. The syntax for creating timers is:
 
-- `a [minutes] [description]` or `add [minutes] [description]`: adds a timer to the left column with the given minutes and description.
+- `add [minutes] [description]`: adds a timer to the left column with the given minutes and description.
 - `add2 [minutes] [description]`: adds a timer to the right column with the given minutes and description.
-- `ar [minutes] [description]` or `addr [minutes] [description]`: adds a timer to the left column in reverse order with the given minutes and description.
+- `addr [minutes] [description]`: adds a timer to the left column in reverse order with the given minutes and description.
 - `addp`: adds a pair of Pomodoro timers to the left column with the durations specified in the Config tab.
 
 You can also edit or delete existing timers by using these commands:
 
 - `rm [id]`: removes the timer with the given id.
 - `clear`: removes all timers.
-- `mv [id1] [id2]` or `move [id1] [id2]`: moves the timer with id1 to the position of id2.
-- `mu [id]` or `moveup [id]`: moves the timer with id up by one position.
-- `md [id]` or `movedown [id]`: moves the timer with id down by one position.
-- `p [id] [minutes]` or `plus [id] [minutes]`: increases the time left of the timer with id by minutes.
-- `m [id] [minutes]` or `minus [id] [minutes]`: decreases the time left of the timer with id by minutes.
-- `rn [id] [description]` or `rename [id] [description]`: changes the description of the timer with id to description.
+- `move [id1] [id2]`: moves the timer with id1 to the position of id2.
+- `moveup [id]`: moves the timer with id up by one position.
+- `movedown [id]`: moves the timer with id down by one position.
+- `merge [id1] [id2]`: merges the timer with id1 with the timer with id2.
+- `plus [id] [minutes]`: increases the time left of the timer with id by minutes.
+- `minus [id] [minutes]`: decreases the time left of the timer with id by minutes.
+- `rename [id] [description]`: changes the description of the timer with id to description.
 
 You can also pause or resume all timers by pressing Space.
 

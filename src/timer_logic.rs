@@ -68,6 +68,17 @@ pub fn move_timer_down(argument1: &str, config: &mut Configuration) {
     config.timers.swap(id, id + 1);
 }
 
+pub fn merge_timers(argument1: &str, argument2: &str, config: &mut Configuration) {
+    if let (Ok(id), Ok(id2)) = (
+        argument1[..].parse::<usize>(),
+        argument2[..].parse::<usize>(),
+    ) {
+        let t = config.timers.remove(id2);
+        config.timers[id].description += &format!(" ({})", t.description);
+        config.timers[id].timeleft_secs += t.timeleft_secs;
+    }
+}
+
 pub fn increase_timer(argument1: &str, argument2: &str, config: &mut Configuration) {
     let id = match argument1[..].parse::<u16>() {
         Ok(id) => id,
@@ -155,6 +166,9 @@ pub fn parse_input(input: &str, config: &mut Configuration) {
         }
         "md" | "movedown" => {
             move_timer_down(&argument1, config);
+        }
+        "merge" => {
+            merge_timers(&argument1, &argument2, config);
         }
         "p" | "plus" => {
             increase_timer(&argument1, &argument2, config);

@@ -6,11 +6,5 @@
   "pomodoro_time": 25,
   "pomodoro_smallbreak": 5,
   "pomodoro_bigbreak": 10,
-  "timers": [
-    {
-      "left_view": true,
-      "description": "wefwe",
-      "timeleft_secs": 1200
-    }
-  ]
+  "timers": []
 }
