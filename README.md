@@ -2,12 +2,6 @@
 
 multitimer-tui is a productivity tool that lets you attach timers to a To-Do List with a TUI (Terminal User Interface). It is built with Rust, Crossterm and TUI as the main dependencies. The project gives you the ability to create, edit and delete multiple timers with different descriptions, time lengths and actions after they run out. It also supports Pomodoro timers with adjustable breaks.
 
-## Installation
-
-To install the project, you need to have Rust and Cargo installed on your system. You can follow the instructions [here](https://www.rust-lang.org/tools/install) to install them. Then, you can clone this repository and run `cargo build --release` in the project directory. The executable file will be located in `target/release/multitimer-tui`.
-
-This project is compatible with Windows and Linux operating systems. It uses different commands for playing sounds, displaying notifications and executing actions depending on the OS.
-
 ## Features
 
 This project has several features that make it a useful and versatile tool for managing timers. Some of these features are:
@@ -20,6 +14,8 @@ This project has several features that make it a useful and versatile tool for m
 - 💾 Saving the configuration and timers to preserve timers and settings across different sessions.
 - 🎨 Choose a color theme for active timers.
 - 🌑 Switch between dark mode and light mode.
+
+![multitimer_tui](https://github.com/Jo6a/multitimer-tui/assets/18258350/1810d222-a1cd-4c66-ac04-9c8110c88a0f)
 
 ## Usage
 
@@ -57,6 +53,12 @@ In the Config tab, you can see a table with various configuration options that y
 The configuration is saved in a file called config.json in the project directory.
 
 To quit the application, you can press q.
+
+## Installation
+
+To install the project, you need to have Rust and Cargo installed on your system. You can follow the instructions [here](https://www.rust-lang.org/tools/install) to install them. Then, you can clone this repository and run `cargo build --release` in the project directory. The executable file will be located in `target/release/multitimer-tui`.
+
+This project is compatible with Windows and Linux operating systems. It uses different commands for playing sounds, displaying notifications and executing actions depending on the OS.
 
 ## TODOs
 
