@@ -15,7 +15,8 @@ This project has several features that make it a useful and versatile tool for m
 - 🎨 Choose a color theme for active timers.
 - 🌑 Switch between dark mode and light mode.
 
-![multitimer_tui](https://github.com/Jo6a/multitimer-tui/assets/18258350/1810d222-a1cd-4c66-ac04-9c8110c88a0f)
+![multitimer_tui](https://github.com/Jo6a/multitimer-tui/assets/18258350/58dc1298-1488-4a7a-bafb-44ee27414711)
+
 
 ## Usage
 
