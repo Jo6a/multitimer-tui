@@ -1,0 +1,15 @@
+Commands                        Description
+add [HH:MM:SS] [description]    adds a timer to the left column with the given time and description.
+add [minutes] [description]     adds a timer to the left column with the given minutes and description.
+add2 [minutes] [description]    adds a timer to the right column with the given minutes and description.
+addr [minutes] [description]    adds a timer to the left column in reverse order with the given minutes and description.
+addp                            adds a pair of Pomodoro timers to the left column with the durations specified in the Config tab.
+rm [id]                         removes the timer with the given id.
+clear                           removes all timers.
+move [id1] [id2]                moves the timer with id1 to the position of id2.
+moveup [id]                     moves the timer with id up by one position.
+movedown [id]                   moves the timer with id down by one position.
+merge [id1] [id2]               merges the timer with id1 with the timer with id2.
+plus [id] [minutes]             increases the time left of the timer with id by minutes.
+minus [id] [minutes]            decreases the time left of the timer with id by minutes.
+rename [id] [description]       changes the description of the timer with id to description.
