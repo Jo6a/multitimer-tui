@@ -46,7 +46,7 @@ impl Timer {
         )
     }
 
-    pub fn tick(&mut self) {
+    pub fn tick(&mut self) -> bool {
         self.is_active = true;
         if self.timeleft_secs > 0 {
             self.timeleft_secs -= 1;
@@ -66,7 +66,9 @@ impl Timer {
                         .args(&["*", "Timer beendet", &self.description])
                         .spawn();
                 }
+                return true;
             }
         }
+        return false;
     }
 }

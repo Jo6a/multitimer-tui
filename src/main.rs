@@ -67,14 +67,23 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, tick_rate: Duration) -> io::R
             if !pause_flag {
                 let mut left_view_done = false;
                 let mut right_view_done = false;
-                for timer in &mut config.timers {
+                let mut done_timers = Vec::new();
+                for (i, timer) in config.timers.iter_mut().enumerate() {
+                    let mut done = false;
                     if timer.left_view && !left_view_done && timer.timeleft_secs != 0 {
-                        timer.tick();
+                        done = timer.tick();
                         left_view_done = true;
                     } else if !timer.left_view && !right_view_done && timer.timeleft_secs != 0 {
-                        timer.tick();
+                        done = timer.tick();
                         right_view_done = true;
                     }
+                    if done && config.move_finished_timer {
+                        done_timers.push(i);
+                    }
+                }
+                for &i in done_timers.iter().rev() {
+                    let t = config.timers.remove(i);
+                    config.timers.push(t);
                 }
 
                 if config.action_timeout != "None"

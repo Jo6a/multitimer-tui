@@ -9,6 +9,7 @@ pub struct Configuration<'a> {
     pub darkmode: bool,
     pub activecolor: String,
     pub reverseadding: bool,
+    pub move_finished_timer: bool,
     pub action_timeout: String,
     pub pomodoro_time: u16,
     pub pomodoro_smallbreak: u16,
@@ -28,6 +29,8 @@ pub struct Configuration<'a> {
     pub activecolor_str: String,
     #[serde(skip_serializing, skip_deserializing)]
     pub reverseadding_str: String,
+    #[serde(skip_serializing, skip_deserializing)]
+    pub move_finished_timer_str: String,
     #[serde(skip_serializing, skip_deserializing)]
     pub action_timeout_str: String,
     #[serde(skip_serializing, skip_deserializing)]
@@ -52,6 +55,7 @@ impl<'a> Configuration<'a> {
             darkmode: true,
             activecolor: "Green".to_string(),
             reverseadding: false,
+            move_finished_timer: true,
             action_timeout: "None".to_string(),
             show_popup: false,
             titles: Vec::new(),
@@ -60,6 +64,7 @@ impl<'a> Configuration<'a> {
             darkmode_str: "".to_string(),
             activecolor_str: "".to_string(),
             reverseadding_str: "".to_string(),
+            move_finished_timer_str: "".to_string(),
             action_timeout_str: "".to_string(),
             pomodoro_time_table_str: "".to_string(),
             pomodoro_smallbreak_table_str: "".to_string(),
@@ -116,10 +121,11 @@ impl<'a> Configuration<'a> {
             0 => self.darkmode_str.clear(),
             1 => self.activecolor_str.clear(),
             2 => self.reverseadding_str.clear(),
-            3 => self.action_timeout_str.clear(),
-            4 => self.pomodoro_time_table_str.clear(),
-            5 => self.pomodoro_smallbreak_table_str.clear(),
-            6 => self.pomodoro_bigbreak_table_str.clear(),
+            3 => self.move_finished_timer_str.clear(),
+            4 => self.action_timeout_str.clear(),
+            5 => self.pomodoro_time_table_str.clear(),
+            6 => self.pomodoro_smallbreak_table_str.clear(),
+            7 => self.pomodoro_bigbreak_table_str.clear(),
             _ => {}
         }
     }
@@ -129,10 +135,11 @@ impl<'a> Configuration<'a> {
             0 => self.darkmode_str.push(c),
             1 => self.activecolor_str.push(c),
             2 => self.reverseadding_str.push(c),
-            3 => self.action_timeout_str.push(c),
-            4 => self.pomodoro_time_table_str.push(c),
-            5 => self.pomodoro_smallbreak_table_str.push(c),
-            6 => self.pomodoro_bigbreak_table_str.push(c),
+            3 => self.move_finished_timer_str.push(c),
+            4 => self.action_timeout_str.push(c),
+            5 => self.pomodoro_time_table_str.push(c),
+            6 => self.pomodoro_smallbreak_table_str.push(c),
+            7 => self.pomodoro_bigbreak_table_str.push(c),
             _ => {}
         }
     }
@@ -142,10 +149,11 @@ impl<'a> Configuration<'a> {
             0 => self.darkmode_str.pop(),
             1 => self.activecolor_str.pop(),
             2 => self.reverseadding_str.pop(),
-            3 => self.action_timeout_str.pop(),
-            4 => self.pomodoro_time_table_str.pop(),
-            5 => self.pomodoro_smallbreak_table_str.pop(),
-            6 => self.pomodoro_bigbreak_table_str.pop(),
+            3 => self.move_finished_timer_str.pop(),
+            4 => self.action_timeout_str.pop(),
+            5 => self.pomodoro_time_table_str.pop(),
+            6 => self.pomodoro_smallbreak_table_str.pop(),
+            7 => self.pomodoro_bigbreak_table_str.pop(),
             _ => " ".to_string().pop(),
         }
     }
@@ -154,6 +162,10 @@ impl<'a> Configuration<'a> {
         self.darkmode = self.darkmode_str.parse::<bool>().unwrap_or_default();
         self.activecolor = self.activecolor_str.clone();
         self.reverseadding = self.reverseadding_str.parse::<bool>().unwrap_or_default();
+        self.move_finished_timer = self
+            .move_finished_timer_str
+            .parse::<bool>()
+            .unwrap_or_default();
         self.action_timeout = self.action_timeout_str.clone();
         self.pomodoro_time = self.pomodoro_time_table_str.parse::<u16>().unwrap();
         self.pomodoro_smallbreak = self.pomodoro_smallbreak_table_str.parse::<u16>().unwrap();

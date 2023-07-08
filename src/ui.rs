@@ -277,6 +277,7 @@ pub fn configtab_rendering<B: Backend>(
         config.darkmode_str = config.darkmode.to_string();
         config.activecolor_str = config.activecolor.clone();
         config.reverseadding_str = config.reverseadding.to_string();
+        config.move_finished_timer_str = config.move_finished_timer.to_string();
         config.action_timeout_str = config.action_timeout.clone();
         config.pomodoro_time_table_str = config.pomodoro_time.to_string();
         config.pomodoro_smallbreak_table_str = config.pomodoro_smallbreak.to_string();
@@ -294,6 +295,10 @@ pub fn configtab_rendering<B: Backend>(
         vec![
             "reverse adding of timers [true, false]".to_string(),
             config.reverseadding_str.to_owned(),
+        ],
+        vec![
+            "move finished timer to end [true, false]".to_string(),
+            config.move_finished_timer_str.to_owned(),
         ],
         vec![
             "action after timers done [None, Hibernate, Shutdown]".to_string(),
