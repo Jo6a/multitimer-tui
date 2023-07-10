@@ -2,8 +2,23 @@
 name = "multitimer-tui"
 version = "0.1.0"
 edition = "2021"
+readme = "README.md"
+description = """
+multitimer-tui is a productivity tool that lets you attach timers to a To-Do List with a TUI
+"""
+homepage = "https://github.com/Jo6a/multitimer-tui"
+repository = "https://github.com/Jo6a/multitimer-tui"
+license = "MIT"
+keywords = ["tui", "terminal", "timer", "pomodoro", "budget", "terminal-app"]
+categories = ["command-line-utilities"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[[bin]]
+name = "multitimer-tui"
+path = "src/main.rs"
+test = false
+bench = false
 
 [dependencies]
 tui = "0.19.0"
