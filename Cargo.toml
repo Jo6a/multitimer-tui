@@ -9,7 +9,7 @@ multitimer-tui is a productivity tool that lets you attach timers to a To-Do Lis
 homepage = "https://github.com/Jo6a/multitimer-tui"
 repository = "https://github.com/Jo6a/multitimer-tui"
 license = "MIT"
-keywords = ["tui", "terminal", "timer", "pomodoro", "budget", "terminal-app"]
+keywords = ["tui", "terminal", "timer", "pomodoro", "terminal-app"]
 categories = ["command-line-utilities"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
