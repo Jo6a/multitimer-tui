@@ -147,7 +147,7 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, config: &mut Configuration, input_field:
 
     let mut chunks2: Vec<Rect> = Vec::new();
     if len_right_view_timers > 0 {
-        let mut size2 = size.clone();
+        let mut size2 = size;
         size2.x = size.width / 2;
         size2.width /= 2;
         chunks2 = Layout::default()
