@@ -24,42 +24,53 @@ pub fn handle_key_press(
     input_field: &mut InputField,
     pause_flag: &mut bool,
 ) -> Result<(), io::Error> {
-    if config.index == 0 {
-        if input_field.content.is_empty() && KeyCode::Char('h') == key.code {
-            config.show_popup = !config.show_popup;
-        } else if let KeyCode::Left = key.code {
-            input_field.move_cursor_left();
-        } else if let KeyCode::Right = key.code {
-            input_field.move_cursor_right();
-        } else if input_field.content.is_empty() && KeyCode::Char(' ') == key.code {
-            *pause_flag = !*pause_flag;
-        } else if KeyCode::Esc == key.code {
-            input_field.content.clear();
-            input_field.cursor_position = 0;
-        } else if let KeyCode::Enter = key.code {
-            parse_input(&input_field.content, config);
-            input_field.content.clear();
-            input_field.cursor_position = 0;
-        } else if let KeyCode::Char(c) = key.code {
-            input_field.insert_char(c);
-        } else if let KeyCode::Backspace = key.code {
-            input_field.delete_char();
-        }
-    } else if config.index == 1 {
-        if KeyCode::Esc == key.code {
-            config.clear_table_entry();
-        } else if let KeyCode::Enter = key.code {
-            config.save_table_changes();
-        } else if let KeyCode::Char(c) = key.code {
-            config.write_table_entry(c);
-        } else if let KeyCode::Backspace = key.code {
-            config.pop_table_entry();
-        } else if let KeyCode::Up = key.code {
-            config.previous_table_entry()
-        } else if let KeyCode::Down = key.code {
-            config.next_table_entry();
-        }
-    };
+    let current_ui = UiState::get_current_ui(config.index);
+
+    match current_ui {
+        UiState::TimerUi => match key.code {
+            KeyCode::Left => input_field.move_cursor_left(),
+            KeyCode::Right => input_field.move_cursor_right(),
+            KeyCode::Esc => {
+                input_field.content.clear();
+                input_field.cursor_position = 0;
+            }
+            KeyCode::Enter => {
+                parse_input(&input_field.content, config);
+                input_field.content.clear();
+                input_field.cursor_position = 0;
+            }
+            KeyCode::Char(c) => match c {
+                'h' => {
+                    if input_field.content.is_empty() {
+                        config.show_popup = !config.show_popup;
+                    } else {
+                        input_field.insert_char(c)
+                    }
+                }
+                ' ' => {
+                    if input_field.content.is_empty() {
+                        *pause_flag = !*pause_flag;
+                    } else {
+                        input_field.insert_char(c)
+                    }
+                }
+                _ => input_field.insert_char(c),
+            },
+            KeyCode::Backspace => input_field.delete_char(),
+            _ => {}
+        },
+        UiState::ConfigUi => match key.code {
+            KeyCode::Esc => config.clear_table_entry(),
+            KeyCode::Enter => config.save_table_changes(),
+            KeyCode::Char(c) => config.write_table_entry(c),
+            KeyCode::Backspace => {
+                config.pop_table_entry();
+            }
+            KeyCode::Up => config.previous_table_entry(),
+            KeyCode::Down => config.next_table_entry(),
+            _ => {}
+        },
+    }
     Ok(())
 }
 
@@ -362,5 +373,20 @@ pub fn centered_rect(percent_x: u16, percent_y: u16, r: Rect) -> Rect {
         y: r.y + v_margin,
         width: r.width - 2 * h_margin,
         height: r.height - 2 * v_margin,
+    }
+}
+
+enum UiState {
+    TimerUi,
+    ConfigUi,
+}
+
+impl UiState {
+    fn get_current_ui(index: usize) -> Self {
+        match index {
+            0 => UiState::TimerUi,
+            1 => UiState::ConfigUi,
+            _ => UiState::TimerUi,
+        }
     }
 }
