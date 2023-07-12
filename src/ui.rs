@@ -351,7 +351,7 @@ pub fn configtab_rendering<B: Backend>(
         ]);
 
     // prevent selecting nothing on Config tab
-    if config.state.selected() == None {
+    if config.state.selected().is_none() {
         config.state.select(Some(0))
     }
     f.render_stateful_widget(t, chunks[1], &mut config.state);
