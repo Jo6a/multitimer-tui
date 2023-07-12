@@ -326,16 +326,28 @@ impl<'a> Configuration<'a> {
                 self.action_timeout_str = parsed_value.to_string();
             }
             ConfigType::PomodoroTime => {
-                let parsed_value = self.pomodoro_time_table_str.parse::<i32>().unwrap() + 1;
+                let mut parsed_value = self.pomodoro_time_table_str.parse::<i32>().unwrap();
+                if parsed_value < 99 {
+                    parsed_value += 1;
+                }
                 self.pomodoro_time_table_str = parsed_value.to_string();
             }
             ConfigType::PomodoroSmallBreak => {
-                let parsed_value = self.pomodoro_smallbreak_table_str.parse::<i32>().unwrap() + 1;
+                let mut parsed_value = self.pomodoro_smallbreak_table_str.parse::<i32>().unwrap();
+                if parsed_value < 99 {
+                    parsed_value += 1;    
+                }
                 self.pomodoro_smallbreak_table_str = parsed_value.to_string();
+                
             }
             ConfigType::PomodoroBigBreak => {
-                let parsed_value = self.pomodoro_bigbreak_table_str.parse::<i32>().unwrap() + 1;
+                let mut parsed_value = self.pomodoro_bigbreak_table_str.parse::<i32>().unwrap();
+                if parsed_value < 99 {
+                    parsed_value += 1;    
+                }
                 self.pomodoro_bigbreak_table_str = parsed_value.to_string();
+                
+                
             }
         };
     }
@@ -362,15 +374,24 @@ impl<'a> Configuration<'a> {
                 self.action_timeout_str = parsed_value.to_string();
             }
             ConfigType::PomodoroTime => {
-                let parsed_value = self.pomodoro_time_table_str.parse::<i32>().unwrap() - 1;
+                let mut parsed_value = self.pomodoro_time_table_str.parse::<i32>().unwrap();
+                if parsed_value > 0 {
+                    parsed_value -= 1;
+                }
                 self.pomodoro_time_table_str = parsed_value.to_string();
             }
             ConfigType::PomodoroSmallBreak => {
-                let parsed_value = self.pomodoro_smallbreak_table_str.parse::<i32>().unwrap() - 1;
+                let mut parsed_value = self.pomodoro_smallbreak_table_str.parse::<i32>().unwrap();
+                if parsed_value > 0 {
+                    parsed_value -= 1;
+                }
                 self.pomodoro_smallbreak_table_str = parsed_value.to_string();
             }
             ConfigType::PomodoroBigBreak => {
-                let parsed_value = self.pomodoro_bigbreak_table_str.parse::<i32>().unwrap() - 1;
+                let mut parsed_value = self.pomodoro_bigbreak_table_str.parse::<i32>().unwrap();
+                if parsed_value > 0 {
+                    parsed_value -= 1;
+                }
                 self.pomodoro_bigbreak_table_str = parsed_value.to_string();
             }
         };
