@@ -1,4 +1,4 @@
-use std::fs;
+use std::{fs, str::FromStr};
 
 use crossterm::event::{KeyCode, KeyEvent};
 
@@ -12,7 +12,7 @@ use tui::{
     Frame,
 };
 
-use crate::color::{get_active_color, get_background_color, get_foreground_color};
+use crate::color::{get_background_color, get_foreground_color, AcceptedColors};
 use crate::configuration::Configuration;
 use crate::input_field::InputField;
 use crate::timer::Timer;
@@ -141,7 +141,9 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, config: &mut Configuration, input_field:
         .highlight_style(
             Style::default()
                 .add_modifier(Modifier::BOLD)
-                .bg(get_active_color(&config.activecolor)),
+                .bg(AcceptedColors::from_str(&config.activecolor)
+                    .unwrap()
+                    .to_color()),
         );
 
     let chunks_index1 = Layout::default()
@@ -177,7 +179,9 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, config: &mut Configuration, input_field:
                 .style(
                     Style::default()
                         .fg(if left_view_timers[i - 1].is_active {
-                            get_active_color(&config.activecolor)
+                            AcceptedColors::from_str(&config.activecolor)
+                                .unwrap()
+                                .to_color()
                         } else {
                             Color::DarkGray
                         })
@@ -225,7 +229,9 @@ pub fn timertab_rendering<B: Backend>(
                 .style(
                     Style::default()
                         .fg(if right_view_timers[i - 1].is_active {
-                            get_active_color(&config.activecolor)
+                            AcceptedColors::from_str(&config.activecolor)
+                                .unwrap()
+                                .to_color()
                         } else {
                             Color::DarkGray
                         })
@@ -237,7 +243,9 @@ pub fn timertab_rendering<B: Backend>(
     let input = Paragraph::new(input_field.content.as_ref())
         .style(
             Style::default()
-                .fg(get_active_color(&config.activecolor))
+                .fg(AcceptedColors::from_str(&config.activecolor)
+                    .unwrap()
+                    .to_color())
                 .bg(get_background_color(config.darkmode)),
         )
         .block(Block::default().borders(Borders::ALL).title("Input"));
@@ -285,7 +293,11 @@ pub fn configtab_rendering<B: Backend>(
         .iter()
         .map(|h| Cell::from(*h).style(Style::default().fg(get_foreground_color(config.darkmode))));
     let header = Row::new(header_cells)
-        .style(Style::default().bg(get_active_color(&config.activecolor)))
+        .style(
+            Style::default().bg(AcceptedColors::from_str(&config.activecolor)
+                .unwrap()
+                .to_color()),
+        )
         .height(1)
         .bottom_margin(1);
     if config.state.selected().is_none() {
@@ -361,7 +373,9 @@ pub fn configtab_rendering<B: Backend>(
         text,
         Style::default()
             .add_modifier(Modifier::ITALIC)
-            .fg(get_active_color(&config.activecolor))
+            .fg(AcceptedColors::from_str(&config.activecolor)
+                .unwrap()
+                .to_color())
             .bg(get_background_color(config.darkmode)),
     ))
     .alignment(Alignment::Center)

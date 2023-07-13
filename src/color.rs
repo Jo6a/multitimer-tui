@@ -18,6 +18,7 @@ pub enum AcceptedColors {
     LightBlue,
     LightMagenta,
     LightCyan,
+    White,
 }
 
 impl AcceptedColors {
@@ -37,13 +38,14 @@ impl AcceptedColors {
             AcceptedColors::LightYellow => AcceptedColors::LightBlue,
             AcceptedColors::LightBlue => AcceptedColors::LightMagenta,
             AcceptedColors::LightMagenta => AcceptedColors::LightCyan,
-            AcceptedColors::LightCyan => AcceptedColors::Black,
+            AcceptedColors::LightCyan => AcceptedColors::White,
+            AcceptedColors::White => AcceptedColors::Black,
         }
     }
 
     pub fn previous_color(&self) -> AcceptedColors {
         match self {
-            AcceptedColors::Black => AcceptedColors::LightCyan,
+            AcceptedColors::Black => AcceptedColors::White,
             AcceptedColors::Red => AcceptedColors::Black,
             AcceptedColors::Green => AcceptedColors::Red,
             AcceptedColors::Yellow => AcceptedColors::Green,
@@ -58,6 +60,28 @@ impl AcceptedColors {
             AcceptedColors::LightBlue => AcceptedColors::LightYellow,
             AcceptedColors::LightMagenta => AcceptedColors::LightBlue,
             AcceptedColors::LightCyan => AcceptedColors::LightMagenta,
+            AcceptedColors::White => AcceptedColors::LightCyan,
+        }
+    }
+
+    pub fn to_color(&self) -> Color {
+        match self {
+            AcceptedColors::Black => Color::Black,
+            AcceptedColors::Red => Color::Red,
+            AcceptedColors::Green => Color::Green,
+            AcceptedColors::Yellow => Color::Yellow,
+            AcceptedColors::Blue => Color::Blue,
+            AcceptedColors::Magenta => Color::Magenta,
+            AcceptedColors::Cyan => Color::Cyan,
+            AcceptedColors::Gray => Color::Gray,
+            AcceptedColors::DarkGray => Color::DarkGray,
+            AcceptedColors::LightRed => Color::LightRed,
+            AcceptedColors::LightGreen => Color::LightGreen,
+            AcceptedColors::LightYellow => Color::LightYellow,
+            AcceptedColors::LightBlue => Color::LightBlue,
+            AcceptedColors::LightMagenta => Color::LightMagenta,
+            AcceptedColors::LightCyan => Color::LightCyan,
+            AcceptedColors::White => Color::White,
         }
     }
 }
@@ -80,6 +104,7 @@ impl fmt::Display for AcceptedColors {
             AcceptedColors::LightBlue => write!(f, "LightBlue"),
             AcceptedColors::LightMagenta => write!(f, "LightMagenta"),
             AcceptedColors::LightCyan => write!(f, "LightCyan"),
+            AcceptedColors::White => write!(f, "White"),
         }
     }
 }
@@ -104,6 +129,7 @@ impl FromStr for AcceptedColors {
             "LightBlue" => Ok(AcceptedColors::LightBlue),
             "LightMagenta" => Ok(AcceptedColors::LightMagenta),
             "LightCyan" => Ok(AcceptedColors::LightCyan),
+            "White" => Ok(AcceptedColors::White),
             _ => Ok(AcceptedColors::Green),
         }
     }
@@ -122,27 +148,5 @@ pub fn get_foreground_color(darkmode: bool) -> Color {
         Color::White
     } else {
         Color::Black
-    }
-}
-
-pub fn get_active_color(colorstr: &str) -> Color {
-    match colorstr.to_lowercase().as_str() {
-        "red" => Color::Red,
-        "yellow" => Color::Yellow,
-        "green" => Color::Green,
-        "blue" => Color::Blue,
-        "black" => Color::Black,
-        "white" => Color::White,
-        "lightgreen" => Color::LightGreen,
-        "lightblue" => Color::LightBlue,
-        "lightred" => Color::LightRed,
-        "lightcyan" => Color::LightCyan,
-        "lightmagenta" => Color::LightMagenta,
-        "lightyellow" => Color::LightYellow,
-        "gray" => Color::Gray,
-        "darkgray" => Color::DarkGray,
-        "magenta" => Color::Magenta,
-        "cyan" => Color::Cyan,
-        _ => Color::Green,
     }
 }
