@@ -2,15 +2,15 @@ use std::{fs, str::FromStr};
 
 use crossterm::event::{KeyCode, KeyEvent};
 
-use std::io;
-use tui::{
+use ratatui::{
     backend::Backend,
     layout::{Alignment, Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
-    text::{Span, Spans},
+    text::{Line, Span},
     widgets::{Block, Borders, Cell, Clear, Paragraph, Row, Table, Tabs, Wrap},
     Frame,
 };
+use std::io;
 
 use crate::color::{get_background_color, get_foreground_color, AcceptedColors};
 use crate::configuration::Configuration;
@@ -115,7 +115,7 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, config: &mut Configuration, input_field:
         .iter()
         .map(|t| {
             let (first, rest) = t.split_at(1);
-            Spans::from(vec![
+            Line::from(vec![
                 Span::styled(
                     first,
                     Style::default()
@@ -149,9 +149,10 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, config: &mut Configuration, input_field:
     let chunks_index1 = Layout::default()
         .direction(Direction::Vertical)
         .constraints(vec![Constraint::Percentage(3), Constraint::Percentage(80)])
-        .split(size);
+        .split(size)
+        .to_vec();
 
-    let mut chunks2: Vec<Rect> = Vec::new();
+    let mut chunks2 = Vec::new();
     if len_right_view_timers > 0 {
         let mut size2 = size;
         size2.x = size.width / 2;
@@ -159,7 +160,8 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, config: &mut Configuration, input_field:
         chunks2 = Layout::default()
             .direction(Direction::Vertical)
             .constraints(constraints_vec2)
-            .split(size2);
+            .split(size2)
+            .to_vec();
     }
 
     if len_right_view_timers > 0 {
@@ -195,7 +197,9 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, config: &mut Configuration, input_field:
         let chunks = Layout::default()
             .direction(Direction::Vertical)
             .constraints(constraints_vec)
-            .split(size);
+            .split(size)
+            .to_vec();
+
         timertab_rendering(
             len_right_view_timers,
             chunks2,
@@ -240,7 +244,7 @@ pub fn timertab_rendering<B: Backend>(
             f.render_widget(paragraph, chunks2[i]);
         }
     }
-    let input = Paragraph::new(input_field.content.as_ref())
+    let input = Paragraph::new(&*input_field.content)
         .style(
             Style::default()
                 .fg(AcceptedColors::from_str(&config.activecolor)

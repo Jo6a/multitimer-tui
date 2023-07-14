@@ -1,6 +1,6 @@
 use std::{fmt, str::FromStr};
 
-use tui::style::Color;
+use ratatui::style::Color;
 
 pub enum AcceptedColors {
     Black,

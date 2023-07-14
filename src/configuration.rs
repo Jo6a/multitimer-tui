@@ -1,7 +1,7 @@
 use chrono::Local;
+use ratatui::widgets::TableState;
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
-use tui::widgets::TableState;
 
 use crate::color::AcceptedColors;
 use crate::timer::Timer;
