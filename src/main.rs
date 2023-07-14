@@ -91,7 +91,7 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, tick_rate: Duration) -> io::R
                     && config.check_all_timers_done()
                 {
                     let os = env::consts::OS;
-                    if os == "linux" && config.action_timeout == "Hibernate" {
+                    if os == "windows" && config.action_timeout == "Hibernate" {
                         Command::new("rundll32.exe")
                             .args(["powrprof.dll,SetSuspendState", "0,1,0"])
                             .spawn()
@@ -131,8 +131,6 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, tick_rate: Duration) -> io::R
             if let Event::Key(key) = event::read()? {
                 if input_field.content.is_empty() && KeyCode::Char('q') == key.code {
                     return Ok(());
-                } else if KeyCode::Tab == key.code {
-                    config.next();
                 } else {
                     ui::handle_key_press(key, &mut config, &mut input_field, &mut pause_flag)?;
                 }

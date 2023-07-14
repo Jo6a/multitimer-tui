@@ -1,8 +1,12 @@
 use chrono::Local;
 use serde::{Deserialize, Serialize};
+use std::str::FromStr;
 use tui::widgets::TableState;
 
+use crate::color::AcceptedColors;
 use crate::timer::Timer;
+use crate::ui_states::{ConfigType, TimerAction};
+use crate::utils::reverse_bool;
 
 #[derive(Serialize, Deserialize)]
 pub struct Configuration<'a> {
@@ -39,6 +43,8 @@ pub struct Configuration<'a> {
     pub pomodoro_smallbreak_table_str: String,
     #[serde(skip_serializing, skip_deserializing)]
     pub pomodoro_bigbreak_table_str: String,
+    #[serde(skip_serializing, skip_deserializing)]
+    pub config_type: ConfigType,
 }
 
 impl<'a> Configuration<'a> {
@@ -69,6 +75,7 @@ impl<'a> Configuration<'a> {
             pomodoro_time_table_str: "".to_string(),
             pomodoro_smallbreak_table_str: "".to_string(),
             pomodoro_bigbreak_table_str: "".to_string(),
+            config_type: ConfigType::default(),
         }
     }
 
@@ -91,7 +98,7 @@ impl<'a> Configuration<'a> {
     pub fn next_table_entry(&mut self) {
         let i = match self.state.selected() {
             Some(i) => {
-                if i >= 7 - 1 {
+                if i >= 7 {
                     0
                 } else {
                     i + 1
@@ -100,13 +107,14 @@ impl<'a> Configuration<'a> {
             None => 0,
         };
         self.state.select(Some(i));
+        self.config_type.next();
     }
 
     pub fn previous_table_entry(&mut self) {
         let i = match self.state.selected() {
             Some(i) => {
                 if i == 0 {
-                    7 - 1
+                    7
                 } else {
                     i - 1
                 }
@@ -114,6 +122,7 @@ impl<'a> Configuration<'a> {
             None => 0,
         };
         self.state.select(Some(i));
+        self.config_type.previous();
     }
 
     pub fn clear_table_entry(&mut self) {
@@ -159,17 +168,50 @@ impl<'a> Configuration<'a> {
     }
 
     pub fn save_table_changes(&mut self) {
-        self.darkmode = self.darkmode_str.parse::<bool>().unwrap_or_default();
-        self.activecolor = self.activecolor_str.clone();
+        self.darkmode = if self.darkmode_str.is_empty() {
+            self.darkmode_str = "false".to_string();
+            false
+        } else {
+            self.darkmode_str.parse::<bool>().unwrap_or_default()
+        };
+        self.activecolor = if self.activecolor_str.is_empty() {
+            self.activecolor_str = "Green".to_string();
+            "Green".to_string()
+        } else {
+            self.activecolor_str.clone()
+        };
+
         self.reverseadding = self.reverseadding_str.parse::<bool>().unwrap_or_default();
         self.move_finished_timer = self
             .move_finished_timer_str
             .parse::<bool>()
             .unwrap_or_default();
-        self.action_timeout = self.action_timeout_str.clone();
-        self.pomodoro_time = self.pomodoro_time_table_str.parse::<u16>().unwrap();
-        self.pomodoro_smallbreak = self.pomodoro_smallbreak_table_str.parse::<u16>().unwrap();
-        self.pomodoro_bigbreak = self.pomodoro_bigbreak_table_str.parse::<u16>().unwrap();
+
+        self.action_timeout = if self.action_timeout_str.is_empty() {
+            self.action_timeout_str = "None".to_string();
+            "None".to_string()
+        } else {
+            self.action_timeout_str.clone()
+        };
+        self.pomodoro_time = if self.pomodoro_time_table_str.is_empty() {
+            self.pomodoro_time_table_str = "25".to_string();
+            25
+        } else {
+            self.pomodoro_time_table_str.parse::<u16>().unwrap()
+        };
+        self.pomodoro_smallbreak = if self.pomodoro_smallbreak_table_str.is_empty() {
+            self.pomodoro_smallbreak_table_str = "5".to_string();
+            5
+        } else {
+            self.pomodoro_smallbreak_table_str.parse::<u16>().unwrap()
+        };
+
+        self.pomodoro_bigbreak = if self.pomodoro_bigbreak_table_str.is_empty() {
+            self.pomodoro_bigbreak_table_str = "10".to_string();
+            10
+        } else {
+            self.pomodoro_bigbreak_table_str.parse::<u16>().unwrap()
+        };
         self.write_to_file().unwrap();
     }
 
@@ -260,5 +302,95 @@ impl<'a> Configuration<'a> {
             }
         }
         true
+    }
+
+    pub fn move_value_right(&mut self) {
+        match self.config_type {
+            ConfigType::DarkMode => self.darkmode_str = reverse_bool(&self.darkmode_str),
+            ConfigType::ActiveColor => {
+                let parsed_color = AcceptedColors::from_str(&self.activecolor_str)
+                    .unwrap()
+                    .next_color();
+                self.activecolor_str = parsed_color.to_string();
+            }
+            ConfigType::ReverseAddingTimer => {
+                self.reverseadding_str = reverse_bool(&self.reverseadding_str)
+            }
+            ConfigType::MoveFinishedTimer => {
+                self.move_finished_timer_str = reverse_bool(&self.move_finished_timer_str)
+            }
+            ConfigType::ActionAfterTimer => {
+                let parsed_value = TimerAction::from_str(&self.action_timeout_str)
+                    .unwrap()
+                    .next();
+                self.action_timeout_str = parsed_value.to_string();
+            }
+            ConfigType::PomodoroTime => {
+                let mut parsed_value = self.pomodoro_time_table_str.parse::<i32>().unwrap();
+                if parsed_value < 99 {
+                    parsed_value += 1;
+                }
+                self.pomodoro_time_table_str = parsed_value.to_string();
+            }
+            ConfigType::PomodoroSmallBreak => {
+                let mut parsed_value = self.pomodoro_smallbreak_table_str.parse::<i32>().unwrap();
+                if parsed_value < 99 {
+                    parsed_value += 1;
+                }
+                self.pomodoro_smallbreak_table_str = parsed_value.to_string();
+            }
+            ConfigType::PomodoroBigBreak => {
+                let mut parsed_value = self.pomodoro_bigbreak_table_str.parse::<i32>().unwrap();
+                if parsed_value < 99 {
+                    parsed_value += 1;
+                }
+                self.pomodoro_bigbreak_table_str = parsed_value.to_string();
+            }
+        };
+    }
+
+    pub fn move_value_left(&mut self) {
+        match self.config_type {
+            ConfigType::DarkMode => self.darkmode_str = reverse_bool(&self.darkmode_str),
+            ConfigType::ActiveColor => {
+                let parsed_color = AcceptedColors::from_str(&self.activecolor_str)
+                    .unwrap()
+                    .previous_color();
+                self.activecolor_str = parsed_color.to_string();
+            }
+            ConfigType::ReverseAddingTimer => {
+                self.reverseadding_str = reverse_bool(&self.reverseadding_str)
+            }
+            ConfigType::MoveFinishedTimer => {
+                self.move_finished_timer_str = reverse_bool(&self.move_finished_timer_str)
+            }
+            ConfigType::ActionAfterTimer => {
+                let parsed_value = TimerAction::from_str(&self.action_timeout_str)
+                    .unwrap()
+                    .previous();
+                self.action_timeout_str = parsed_value.to_string();
+            }
+            ConfigType::PomodoroTime => {
+                let mut parsed_value = self.pomodoro_time_table_str.parse::<i32>().unwrap();
+                if parsed_value > 0 {
+                    parsed_value -= 1;
+                }
+                self.pomodoro_time_table_str = parsed_value.to_string();
+            }
+            ConfigType::PomodoroSmallBreak => {
+                let mut parsed_value = self.pomodoro_smallbreak_table_str.parse::<i32>().unwrap();
+                if parsed_value > 0 {
+                    parsed_value -= 1;
+                }
+                self.pomodoro_smallbreak_table_str = parsed_value.to_string();
+            }
+            ConfigType::PomodoroBigBreak => {
+                let mut parsed_value = self.pomodoro_bigbreak_table_str.parse::<i32>().unwrap();
+                if parsed_value > 0 {
+                    parsed_value -= 1;
+                }
+                self.pomodoro_bigbreak_table_str = parsed_value.to_string();
+            }
+        };
     }
 }

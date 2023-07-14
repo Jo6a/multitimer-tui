@@ -1,4 +1,4 @@
-use std::fs;
+use std::{fs, str::FromStr};
 
 use crossterm::event::{KeyCode, KeyEvent};
 
@@ -12,11 +12,12 @@ use tui::{
     Frame,
 };
 
-use crate::color::{get_active_color, get_background_color, get_foreground_color};
+use crate::color::{get_background_color, get_foreground_color, AcceptedColors};
 use crate::configuration::Configuration;
 use crate::input_field::InputField;
 use crate::timer::Timer;
 use crate::timer_logic::parse_input;
+use crate::ui_states::UiState;
 
 pub fn handle_key_press(
     key: KeyEvent,
@@ -28,6 +29,7 @@ pub fn handle_key_press(
 
     match current_ui {
         UiState::TimerUi => match key.code {
+            KeyCode::Tab => config.next(),
             KeyCode::Left => input_field.move_cursor_left(),
             KeyCode::Right => input_field.move_cursor_right(),
             KeyCode::Esc => {
@@ -60,14 +62,16 @@ pub fn handle_key_press(
             _ => {}
         },
         UiState::ConfigUi => match key.code {
+            KeyCode::Tab => config.next(),
             KeyCode::Esc => config.clear_table_entry(),
             KeyCode::Enter => config.save_table_changes(),
-            KeyCode::Char(c) => config.write_table_entry(c),
             KeyCode::Backspace => {
                 config.pop_table_entry();
             }
             KeyCode::Up => config.previous_table_entry(),
             KeyCode::Down => config.next_table_entry(),
+            KeyCode::Right => config.move_value_right(),
+            KeyCode::Left => config.move_value_left(),
             _ => {}
         },
     }
@@ -137,7 +141,9 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, config: &mut Configuration, input_field:
         .highlight_style(
             Style::default()
                 .add_modifier(Modifier::BOLD)
-                .bg(get_active_color(&config.activecolor)),
+                .bg(AcceptedColors::from_str(&config.activecolor)
+                    .unwrap()
+                    .to_color()),
         );
 
     let chunks_index1 = Layout::default()
@@ -173,7 +179,9 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, config: &mut Configuration, input_field:
                 .style(
                     Style::default()
                         .fg(if left_view_timers[i - 1].is_active {
-                            get_active_color(&config.activecolor)
+                            AcceptedColors::from_str(&config.activecolor)
+                                .unwrap()
+                                .to_color()
                         } else {
                             Color::DarkGray
                         })
@@ -221,7 +229,9 @@ pub fn timertab_rendering<B: Backend>(
                 .style(
                     Style::default()
                         .fg(if right_view_timers[i - 1].is_active {
-                            get_active_color(&config.activecolor)
+                            AcceptedColors::from_str(&config.activecolor)
+                                .unwrap()
+                                .to_color()
                         } else {
                             Color::DarkGray
                         })
@@ -233,7 +243,9 @@ pub fn timertab_rendering<B: Backend>(
     let input = Paragraph::new(input_field.content.as_ref())
         .style(
             Style::default()
-                .fg(get_active_color(&config.activecolor))
+                .fg(AcceptedColors::from_str(&config.activecolor)
+                    .unwrap()
+                    .to_color())
                 .bg(get_background_color(config.darkmode)),
         )
         .block(Block::default().borders(Borders::ALL).title("Input"));
@@ -281,7 +293,11 @@ pub fn configtab_rendering<B: Backend>(
         .iter()
         .map(|h| Cell::from(*h).style(Style::default().fg(get_foreground_color(config.darkmode))));
     let header = Row::new(header_cells)
-        .style(Style::default().bg(get_active_color(&config.activecolor)))
+        .style(
+            Style::default().bg(AcceptedColors::from_str(&config.activecolor)
+                .unwrap()
+                .to_color()),
+        )
         .height(1)
         .bottom_margin(1);
     if config.state.selected().is_none() {
@@ -295,36 +311,33 @@ pub fn configtab_rendering<B: Backend>(
         config.pomodoro_bigbreak_table_str = config.pomodoro_bigbreak.to_string();
     }
     let items = vec![
+        vec!["Darkmode".to_string(), config.darkmode_str.to_owned()],
         vec![
-            "darkmode [true, false]".to_string(),
-            config.darkmode_str.to_owned(),
-        ],
-        vec![
-            "active color [Red, Green, Blue, etc.]".to_string(),
+            "Active Color".to_string(),
             config.activecolor_str.to_owned(),
         ],
         vec![
-            "reverse adding of timers [true, false]".to_string(),
+            "Reverse Adding of Timers".to_string(),
             config.reverseadding_str.to_owned(),
         ],
         vec![
-            "move finished timer to end [true, false]".to_string(),
+            "Move Finished Timer to End".to_string(),
             config.move_finished_timer_str.to_owned(),
         ],
         vec![
-            "action after timers done [None, Hibernate, Shutdown]".to_string(),
+            "Action After Timers Done".to_string(),
             config.action_timeout_str.to_owned(),
         ],
         vec![
-            "pomodoro_time [int]".to_string(),
+            "Pomodoro Time".to_string(),
             config.pomodoro_time_table_str.to_owned(),
         ],
         vec![
-            "pomodoro_smallbreak [int]".to_string(),
+            "Pomodoro Small Break Time".to_string(),
             config.pomodoro_smallbreak_table_str.to_owned(),
         ],
         vec![
-            "pomodoro_bigbreak [int]".to_string(),
+            "Pomodoro Big Break Time".to_string(),
             config.pomodoro_bigbreak_table_str.to_owned(),
         ],
     ];
@@ -338,7 +351,7 @@ pub fn configtab_rendering<B: Backend>(
         let cells = item.iter().map(|c| Cell::from(&c[..]));
         Row::new(cells).height(height as u16).bottom_margin(1)
     });
-    let t = Table::new(rows)
+    let t: Table<'_> = Table::new(rows)
         .header(header)
         .block(Block::default().borders(Borders::ALL))
         .highlight_style(selected_style)
@@ -348,6 +361,11 @@ pub fn configtab_rendering<B: Backend>(
             Constraint::Length(30),
             Constraint::Min(10),
         ]);
+
+    // prevent selecting nothing on Config tab
+    if config.state.selected().is_none() {
+        config.state.select(Some(0))
+    }
     f.render_stateful_widget(t, chunks[1], &mut config.state);
     //* */
     let text = "Press <ENTER> to save the configuration";
@@ -355,7 +373,9 @@ pub fn configtab_rendering<B: Backend>(
         text,
         Style::default()
             .add_modifier(Modifier::ITALIC)
-            .fg(get_active_color(&config.activecolor))
+            .fg(AcceptedColors::from_str(&config.activecolor)
+                .unwrap()
+                .to_color())
             .bg(get_background_color(config.darkmode)),
     ))
     .alignment(Alignment::Center)
@@ -373,20 +393,5 @@ pub fn centered_rect(percent_x: u16, percent_y: u16, r: Rect) -> Rect {
         y: r.y + v_margin,
         width: r.width - 2 * h_margin,
         height: r.height - 2 * v_margin,
-    }
-}
-
-enum UiState {
-    TimerUi,
-    ConfigUi,
-}
-
-impl UiState {
-    fn get_current_ui(index: usize) -> Self {
-        match index {
-            0 => UiState::TimerUi,
-            1 => UiState::ConfigUi,
-            _ => UiState::TimerUi,
-        }
     }
 }
