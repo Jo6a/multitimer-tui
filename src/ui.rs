@@ -93,7 +93,7 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, config: &mut Configuration, input_field:
     let right_view_timers: Vec<&Timer> = config.timers.iter().filter(|t| !t.left_view).collect();
     let mut constraints_vec = Vec::new();
     let mut constraints_vec2 = Vec::new();
-    constraints_vec.push(Constraint::Percentage(3));
+    constraints_vec.push(Constraint::Length(1));
     for _ in 0..len_left_view_timers {
         constraints_vec.push(Constraint::Length(3));
     }
@@ -104,7 +104,7 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, config: &mut Configuration, input_field:
     constraints_vec.push(Constraint::Max(3));
 
     if len_right_view_timers > 0 {
-        constraints_vec2.push(Constraint::Percentage(3));
+        constraints_vec2.push(Constraint::Length(1));
         for _ in 0..len_right_view_timers {
             constraints_vec2.push(Constraint::Length(3));
         }
