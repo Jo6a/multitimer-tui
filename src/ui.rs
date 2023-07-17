@@ -86,28 +86,33 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, config: &mut Configuration, input_field:
             .bg(get_background_color(config.darkmode)),
     );
     f.render_widget(block, size);
+
     let len_right_view_timers = config.num_rightview_timers();
     let len_left_view_timers = config.timers.len() - len_right_view_timers;
     let left_view_timers: Vec<&Timer> = config.timers.iter().filter(|t| t.left_view).collect();
     let right_view_timers: Vec<&Timer> = config.timers.iter().filter(|t| !t.left_view).collect();
     let mut constraints_vec = Vec::new();
     let mut constraints_vec2 = Vec::new();
-    constraints_vec.push(Constraint::Percentage(3));
+    constraints_vec.push(Constraint::Length(1));
     for _ in 0..len_left_view_timers {
-        constraints_vec.push(Constraint::Percentage(
-            (90.0 / len_left_view_timers as f32) as u16,
-        ));
+        constraints_vec.push(Constraint::Length(3));
     }
-    constraints_vec.push(Constraint::Percentage(7));
+    // Constraints to control all the empty spaces below the timer and the input field.
+    // Min 0 so if no space, it won't have any size
+    // Max 3 so ensure the input field doesn't over extend
+    constraints_vec.push(Constraint::Min(0));
+    constraints_vec.push(Constraint::Max(3));
 
     if len_right_view_timers > 0 {
-        constraints_vec2.push(Constraint::Percentage(3));
+        constraints_vec2.push(Constraint::Length(1));
         for _ in 0..len_right_view_timers {
-            constraints_vec2.push(Constraint::Percentage(
-                (90.0 / len_right_view_timers as f32) as u16,
-            ));
+            constraints_vec2.push(Constraint::Length(3));
         }
-        constraints_vec2.push(Constraint::Percentage(7));
+        // Constraints to control all the empty spaces below the timer2 and the input field.
+        // Min 0 so if no space, it won't have any size
+        // Max 3 so ensure the input field doesn't over extend
+        constraints_vec2.push(Constraint::Min(0));
+        constraints_vec2.push(Constraint::Max(3));
     }
 
     let titles = config
@@ -131,6 +136,7 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, config: &mut Configuration, input_field:
             ])
         })
         .collect();
+
     let tabs = Tabs::new(titles)
         .select(config.index)
         .style(
@@ -171,13 +177,15 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, config: &mut Configuration, input_field:
         .direction(Direction::Vertical)
         .constraints(&*constraints_vec)
         .split(size);
+
     f.render_widget(tabs, chunks[0]);
 
     if config.index == 0 {
-        /* loop for timers */
-        for i in 1..chunks.len() - 1 {
+        // loop for timers
+        // len -2 because last 2 are used for rendering the empty fields and the input field
+        for i in 1..chunks.len() - 2 {
             let paragraph = Paragraph::new(left_view_timers[i - 1].formatted())
-                .block(Block::default().borders(Borders::TOP))
+                .block(Block::default().borders(Borders::ALL))
                 .style(
                     Style::default()
                         .fg(if left_view_timers[i - 1].is_active {
@@ -191,6 +199,10 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, config: &mut Configuration, input_field:
                 );
             f.render_widget(paragraph, chunks[i]);
         }
+
+        // Renders the empty spaces below the timer with nothing
+        f.render_widget(Paragraph::new(""), chunks[chunks.len() - 2]);
+
         if len_right_view_timers > 0 {
             size.width *= 2;
         }
@@ -226,10 +238,11 @@ pub fn timertab_rendering<B: Backend>(
     size: Rect,
 ) {
     if len_right_view_timers > 0 {
-        /* loop for timers2 */
-        for i in 1..chunks2.len() - 1 {
+        // loop for timers2
+        // len -2 because last 2 are used for rendering the empty fields and the input field
+        for i in 1..chunks2.len() - 2 {
             let paragraph = Paragraph::new(right_view_timers[i - 1].formatted())
-                .block(Block::default().borders(Borders::TOP | Borders::LEFT))
+                .block(Block::default().borders(Borders::ALL))
                 .style(
                     Style::default()
                         .fg(if right_view_timers[i - 1].is_active {
@@ -243,7 +256,10 @@ pub fn timertab_rendering<B: Backend>(
                 );
             f.render_widget(paragraph, chunks2[i]);
         }
+        // Renders the empty spaces below the timer with nothing
+        f.render_widget(Paragraph::new(""), chunks2[chunks2.len() - 2]);
     }
+
     let input = Paragraph::new(&*input_field.content)
         .style(
             Style::default()
