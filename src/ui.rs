@@ -65,9 +65,6 @@ pub fn handle_key_press(
             KeyCode::Tab => config.next(),
             KeyCode::Esc => config.clear_table_entry(),
             KeyCode::Enter => config.save_table_changes(),
-            KeyCode::Backspace => {
-                config.pop_table_entry();
-            }
             KeyCode::Up => config.previous_table_entry(),
             KeyCode::Down => config.next_table_entry(),
             KeyCode::Right => config.move_value_right(),
