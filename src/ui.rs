@@ -88,7 +88,6 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, config: &mut Configuration, input_field:
     f.render_widget(block, size);
 
     let len_right_view_timers = config.num_rightview_timers();
-    let len_left_view_timers = config.timers.len() - len_right_view_timers;
 
     let left_view_timers: Vec<&Timer> = config.timers.iter().filter(|t| t.left_view).collect();
     let right_view_timers: Vec<&Timer> = config.timers.iter().filter(|t| !t.left_view).collect();
@@ -96,7 +95,19 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, config: &mut Configuration, input_field:
     let mut left_timer_gauge_value = Vec::new();
     let mut right_timer_gauge_value = Vec::new();
 
+    let mut constraints_vec = Vec::new();
+    let mut constraints_vec2 = Vec::new();
+
+    // 1 length constraint for the upper Tab text
+    constraints_vec.push(Constraint::Length(1));
+
     for i in &left_view_timers {
+        if i.is_active {
+            constraints_vec.push(Constraint::Length(4));
+        } else {
+            constraints_vec.push(Constraint::Length(3));
+        }
+
         let total_time = i.initial_time as i64;
         let remaining_time = i.timeleft_secs as i64;
 
@@ -105,29 +116,8 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, config: &mut Configuration, input_field:
         let percentage_completed = (completed_time as f64 / total_time as f64) * 100.0;
 
         left_timer_gauge_value.push(percentage_completed)
-        
     }
 
-    for i in &right_view_timers {
-        let total_time = i.initial_time as i64;
-        let remaining_time = i.timeleft_secs as i64;
-
-        let completed_time = total_time - remaining_time;
-
-        let percentage_completed = (completed_time as f64 / total_time as f64) * 100.0;
-
-        right_timer_gauge_value.push(percentage_completed)
-    }
-
-    let mut constraints_vec = Vec::new();
-    let mut constraints_vec2 = Vec::new();
-
-    // 1 length constraint for the upper Tab text
-    constraints_vec.push(Constraint::Length(1));
-
-    for _ in 0..len_left_view_timers {
-        constraints_vec.push(Constraint::Length(4));
-    }
     // Constraints to control all the empty spaces below the timer and the input field.
     // Min 0 so if no space, it won't have any size
     // Max 3 so ensure the input field doesn't over extend
@@ -136,8 +126,22 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, config: &mut Configuration, input_field:
 
     if len_right_view_timers > 0 {
         constraints_vec2.push(Constraint::Length(1));
-        for _ in 0..len_right_view_timers {
-            constraints_vec2.push(Constraint::Length(4));
+
+        for i in &right_view_timers {
+            if i.is_active {
+                constraints_vec2.push(Constraint::Length(4));
+            } else {
+                constraints_vec2.push(Constraint::Length(3));
+            }
+
+            let total_time = i.initial_time as i64;
+            let remaining_time = i.timeleft_secs as i64;
+
+            let completed_time = total_time - remaining_time;
+
+            let percentage_completed = (completed_time as f64 / total_time as f64) * 100.0;
+
+            right_timer_gauge_value.push(percentage_completed)
         }
         // Constraints to control all the empty spaces below the timer2 and the input field.
         // Min 0 so if no space, it won't have any size
@@ -215,8 +219,8 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, config: &mut Configuration, input_field:
         // loop for timers
         // len -2 because last 2 are used for rendering the empty fields and the input field
         for i in 1..chunks.len() - 2 {
-            let paragraph = Paragraph::new(left_view_timers[i - 1].formatted())
-                .block(Block::default().borders(Borders::TOP | Borders::LEFT | Borders::RIGHT))
+            let mut paragraph = Paragraph::new(left_view_timers[i - 1].formatted())
+                .block(Block::default().borders(Borders::ALL))
                 .style(
                     Style::default()
                         .fg(if left_view_timers[i - 1].is_active {
@@ -229,45 +233,51 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, config: &mut Configuration, input_field:
                         .bg(get_background_color(config.darkmode)),
                 );
 
-            let timer_label = format!("{:.2}%", left_timer_gauge_value[i - 1]);
+            if !left_view_timers[i - 1].is_active {
+                f.render_widget(paragraph, chunks[i]);
+            } else {
+                paragraph = paragraph.block(Block::default().borders(Borders::TOP | Borders::LEFT | Borders::RIGHT));
+                let gauge_label = format!("{:.2}%", left_timer_gauge_value[i - 1]);
+                let timer_gauge = Gauge::default()
+                    .block(
+                        Block::default()
+                            .borders(Borders::BOTTOM | Borders::LEFT | Borders::RIGHT)
+                            .border_style(
+                                Style::default()
+                                    .fg(if left_view_timers[i - 1].is_active {
+                                        AcceptedColors::from_str(&config.activecolor)
+                                            .unwrap()
+                                            .to_color()
+                                    } else {
+                                        Color::DarkGray
+                                    })
+                                    .bg(get_background_color(config.darkmode)),
+                            ),
+                    )
+                    .gauge_style(
+                        Style::default()
+                            .fg(if left_view_timers[i - 1].is_active {
+                                AcceptedColors::from_str(&config.activecolor)
+                                    .unwrap()
+                                    .to_color()
+                            } else {
+                                Color::DarkGray
+                            })
+                            .bg(get_background_color(config.darkmode))
+                            .add_modifier(Modifier::ITALIC),
+                    )
+                    .label(gauge_label)
+                    .ratio(left_timer_gauge_value[i - 1] / 100.0 as f64)
+                    .use_unicode(true);
 
-            let timer_gauge = Gauge::default()
-                .block(
-                    Block::default()
-                        .borders(Borders::BOTTOM | Borders::LEFT | Borders::RIGHT)
-                        .border_style(
-                            Style::default()
-                                .fg(if left_view_timers[i - 1].is_active {
-                                    AcceptedColors::from_str(&config.activecolor)
-                                        .unwrap()
-                                        .to_color()
-                                } else {
-                                    Color::DarkGray
-                                })
-                                .bg(get_background_color(config.darkmode)),
-                        ),
-                )
-                .gauge_style(
-                    Style::default()
-                        .fg(if left_view_timers[i - 1].is_active {
-                            AcceptedColors::from_str(&config.activecolor)
-                                .unwrap()
-                                .to_color()
-                        } else {
-                            Color::DarkGray
-                        })
-                        .bg(get_background_color(config.darkmode))
-                        .add_modifier(Modifier::ITALIC),
-                )
-                .label(timer_label).ratio(left_timer_gauge_value[i - 1] / 100.0 as f64).use_unicode(true);
+                let divided_chunks = Layout::default()
+                    .direction(Direction::Vertical)
+                    .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
+                    .split(chunks[i]);
 
-            let divided_chunks = Layout::default()
-                .direction(Direction::Vertical)
-                .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
-                .split(chunks[i]);
-
-            f.render_widget(paragraph, divided_chunks[0]);
-            f.render_widget(timer_gauge, divided_chunks[1]);
+                f.render_widget(paragraph, divided_chunks[0]);
+                f.render_widget(timer_gauge, divided_chunks[1]);
+            }
         }
 
         // Renders the empty spaces below the timer with nothing
@@ -313,8 +323,8 @@ pub fn timertab_rendering<B: Backend>(
         // loop for timers2
         // len -2 because last 2 are used for rendering the empty fields and the input field
         for i in 1..chunks2.len() - 2 {
-            let paragraph = Paragraph::new(right_view_timers[i - 1].formatted())
-                .block(Block::default().borders(Borders::TOP | Borders::LEFT | Borders::RIGHT))
+            let mut paragraph = Paragraph::new(right_view_timers[i - 1].formatted())
+                .block(Block::default().borders(Borders::ALL))
                 .style(
                     Style::default()
                         .fg(if right_view_timers[i - 1].is_active {
@@ -326,44 +336,52 @@ pub fn timertab_rendering<B: Backend>(
                         })
                         .bg(get_background_color(config.darkmode)),
                 );
-                let timer_label = format!("{:.2}%", right_timer_gauge_value[i - 1]);
+
+            if !right_view_timers[i - 1].is_active {
+                f.render_widget(paragraph, chunks2[i]);
+            } else {
+                paragraph = paragraph.block(Block::default().borders(Borders::TOP | Borders::LEFT | Borders::RIGHT));
+                let gauge_label = format!("{:.2}%", right_timer_gauge_value[i - 1]);
                 let timer_gauge = Gauge::default()
-                .block(
-                    Block::default()
-                        .borders(Borders::BOTTOM | Borders::LEFT | Borders::RIGHT)
-                        .border_style(
-                            Style::default()
-                                .fg(if right_view_timers[i - 1].is_active {
-                                    AcceptedColors::from_str(&config.activecolor)
-                                        .unwrap()
-                                        .to_color()
-                                } else {
-                                    Color::DarkGray
-                                })
-                                .bg(get_background_color(config.darkmode)),
-                        ),
-                )
-                .gauge_style(
-                    Style::default()
-                        .fg(if right_view_timers[i - 1].is_active {
-                            AcceptedColors::from_str(&config.activecolor)
-                                .unwrap()
-                                .to_color()
-                        } else {
-                            Color::DarkGray
-                        })
-                        .bg(get_background_color(config.darkmode))
-                        .add_modifier(Modifier::ITALIC),
-                )
-                .label(timer_label).ratio(right_timer_gauge_value[i - 1] / 100.0 as f64).use_unicode(true);
+                    .block(
+                        Block::default()
+                            .borders(Borders::BOTTOM | Borders::LEFT | Borders::RIGHT)
+                            .border_style(
+                                Style::default()
+                                    .fg(if right_view_timers[i - 1].is_active {
+                                        AcceptedColors::from_str(&config.activecolor)
+                                            .unwrap()
+                                            .to_color()
+                                    } else {
+                                        Color::DarkGray
+                                    })
+                                    .bg(get_background_color(config.darkmode)),
+                            ),
+                    )
+                    .gauge_style(
+                        Style::default()
+                            .fg(if right_view_timers[i - 1].is_active {
+                                AcceptedColors::from_str(&config.activecolor)
+                                    .unwrap()
+                                    .to_color()
+                            } else {
+                                Color::DarkGray
+                            })
+                            .bg(get_background_color(config.darkmode))
+                            .add_modifier(Modifier::ITALIC),
+                    )
+                    .label(gauge_label)
+                    .ratio(right_timer_gauge_value[i - 1] / 100.0 as f64)
+                    .use_unicode(true);
 
-            let divided_chunks = Layout::default()
-                .direction(Direction::Vertical)
-                .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
-                .split(chunks2[i]);
+                let divided_chunks = Layout::default()
+                    .direction(Direction::Vertical)
+                    .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
+                    .split(chunks2[i]);
 
-            f.render_widget(paragraph, divided_chunks[0]);
-            f.render_widget(timer_gauge, divided_chunks[1]);
+                f.render_widget(paragraph, divided_chunks[0]);
+                f.render_widget(timer_gauge, divided_chunks[1]);
+            }
         }
         // Renders the empty spaces below the timer with nothing
         f.render_widget(Paragraph::new(""), chunks2[chunks2.len() - 2]);
