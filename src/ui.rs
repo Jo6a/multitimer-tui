@@ -105,6 +105,7 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, config: &mut Configuration, input_field:
             constraints_vec.push(Constraint::Length(3));
         }
 
+        // find the % of elapsed time and push them to vec
         let total_time = i.initial_time as i64;
         let remaining_time = i.timeleft_secs as i64;
 
@@ -131,6 +132,7 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, config: &mut Configuration, input_field:
                 constraints_vec2.push(Constraint::Length(3));
             }
 
+            // find the % of elapsed time and push them to vec
             let total_time = i.initial_time as i64;
             let remaining_time = i.timeleft_secs as i64;
 
@@ -230,10 +232,13 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, config: &mut Configuration, input_field:
                         .bg(get_background_color(config.darkmode)),
                 );
 
+            // if the timer is not active, only render the text on the entire chunk
+            // otherwise divide the chunk into 2 smaller chunks and render text + gauge
             if !left_view_timers[i - 1].is_active {
                 f.render_widget(paragraph, chunks[i]);
             } else {
-                paragraph = paragraph.block(Block::default().borders(Borders::TOP | Borders::LEFT | Borders::RIGHT));
+                paragraph = paragraph
+                    .block(Block::default().borders(Borders::TOP | Borders::LEFT | Borders::RIGHT));
                 let gauge_label = format!("{:.2}%", left_timer_gauge_value[i - 1]);
                 let timer_gauge = Gauge::default()
                     .block(
@@ -264,7 +269,7 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, config: &mut Configuration, input_field:
                             .add_modifier(Modifier::ITALIC),
                     )
                     .label(gauge_label)
-                    .ratio(left_timer_gauge_value[i - 1] / 100.0 as f64)
+                    .ratio(left_timer_gauge_value[i - 1] / 100.0)
                     .use_unicode(true);
 
                 let divided_chunks = Layout::default()
@@ -334,10 +339,13 @@ pub fn timertab_rendering<B: Backend>(
                         .bg(get_background_color(config.darkmode)),
                 );
 
+            // if the timer is not active, only render the text on the entire chunk
+            // otherwise divide the chunk into 2 smaller chunks and render text + gauge
             if !right_view_timers[i - 1].is_active {
                 f.render_widget(paragraph, chunks2[i]);
             } else {
-                paragraph = paragraph.block(Block::default().borders(Borders::TOP | Borders::LEFT | Borders::RIGHT));
+                paragraph = paragraph
+                    .block(Block::default().borders(Borders::TOP | Borders::LEFT | Borders::RIGHT));
                 let gauge_label = format!("{:.2}%", right_timer_gauge_value[i - 1]);
                 let timer_gauge = Gauge::default()
                     .block(
@@ -368,7 +376,7 @@ pub fn timertab_rendering<B: Backend>(
                             .add_modifier(Modifier::ITALIC),
                     )
                     .label(gauge_label)
-                    .ratio(right_timer_gauge_value[i - 1] / 100.0 as f64)
+                    .ratio(right_timer_gauge_value[i - 1] / 100.0)
                     .use_unicode(true);
 
                 let divided_chunks = Layout::default()
