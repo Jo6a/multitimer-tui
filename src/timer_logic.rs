@@ -73,9 +73,25 @@ pub fn merge_timers(argument1: &str, argument2: &str, config: &mut Configuration
         argument1[..].parse::<usize>(),
         argument2[..].parse::<usize>(),
     ) {
-        let t = config.timers.remove(id2);
+
+        let mut id_1_found = false;
+        let mut id_2_found = false;
+
+        for i in &config.timers {
+            if i.id as usize == id {
+                id_1_found = true;
+            }
+            if i.id as usize == id2 {
+                id_2_found = true;
+            }
+        }
+
+        if id_1_found && id_2_found {
+            let t = config.timers.remove(id2);
         config.timers[id].description += &format!(" ({})", t.description);
         config.timers[id].timeleft_secs += t.timeleft_secs;
+        config.timers[id].initial_time += t.timeleft_secs;
+        }
     }
 }
 
@@ -86,7 +102,7 @@ pub fn increase_timer(argument1: &str, argument2: &str, config: &mut Configurati
             return;
         }
     };
-    let min = match argument2[..].parse::<u16>() {
+    let min = match argument2[..].parse::<u64>() {
         Ok(min) => min,
         Err(_) => {
             return;
@@ -95,6 +111,7 @@ pub fn increase_timer(argument1: &str, argument2: &str, config: &mut Configurati
     for t in &mut config.timers {
         if t.id == id {
             t.timeleft_secs += min * 60;
+            t.initial_time += min * 60;
             break;
         }
     }
@@ -107,7 +124,7 @@ pub fn decrease_timer(argument1: &str, argument2: &str, config: &mut Configurati
             return;
         }
     };
-    let min = match argument2[..].parse::<u16>() {
+    let min = match argument2[..].parse::<u64>() {
         Ok(min) => min,
         Err(_) => {
             return;
@@ -119,6 +136,7 @@ pub fn decrease_timer(argument1: &str, argument2: &str, config: &mut Configurati
                 t.timeleft_secs = 0;
             } else {
                 t.timeleft_secs -= min * 60;
+                t.initial_time -= min * 60;
             }
             break;
         }

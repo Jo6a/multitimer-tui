@@ -10,8 +10,8 @@ pub struct Timer {
     pub is_active: bool,
     pub left_view: bool,
     pub description: String,
-    pub initial_time: u16,
-    pub timeleft_secs: u16,
+    pub initial_time: u64,
+    pub timeleft_secs: u64,
     #[serde(skip_serializing, skip_deserializing)]
     pub endtime: DateTime<Local>,
     #[serde(skip_serializing, skip_deserializing)]
@@ -19,7 +19,7 @@ pub struct Timer {
 }
 
 impl Timer {
-    pub fn new(description: String, timeleft_secs: u16, left_view: bool) -> Self {
+    pub fn new(description: String, timeleft_secs: u64, left_view: bool) -> Self {
         Self {
             id: 0,
             is_active: false,
