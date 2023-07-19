@@ -139,34 +139,6 @@ impl<'a> Configuration<'a> {
         }
     }
 
-    pub fn write_table_entry(&mut self, c: char) {
-        match self.state.selected().unwrap() {
-            0 => self.darkmode_str.push(c),
-            1 => self.activecolor_str.push(c),
-            2 => self.reverseadding_str.push(c),
-            3 => self.move_finished_timer_str.push(c),
-            4 => self.action_timeout_str.push(c),
-            5 => self.pomodoro_time_table_str.push(c),
-            6 => self.pomodoro_smallbreak_table_str.push(c),
-            7 => self.pomodoro_bigbreak_table_str.push(c),
-            _ => {}
-        }
-    }
-
-    pub fn pop_table_entry(&mut self) -> Option<char> {
-        match self.state.selected().unwrap() {
-            0 => self.darkmode_str.pop(),
-            1 => self.activecolor_str.pop(),
-            2 => self.reverseadding_str.pop(),
-            3 => self.move_finished_timer_str.pop(),
-            4 => self.action_timeout_str.pop(),
-            5 => self.pomodoro_time_table_str.pop(),
-            6 => self.pomodoro_smallbreak_table_str.pop(),
-            7 => self.pomodoro_bigbreak_table_str.pop(),
-            _ => " ".to_string().pop(),
-        }
-    }
-
     pub fn save_table_changes(&mut self) {
         self.darkmode = if self.darkmode_str.is_empty() {
             self.darkmode_str = "false".to_string();

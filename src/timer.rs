@@ -10,6 +10,7 @@ pub struct Timer {
     pub is_active: bool,
     pub left_view: bool,
     pub description: String,
+    pub initial_time: u16,
     pub timeleft_secs: u16,
     #[serde(skip_serializing, skip_deserializing)]
     pub endtime: DateTime<Local>,
@@ -24,6 +25,7 @@ impl Timer {
             is_active: false,
             left_view,
             description,
+            initial_time: timeleft_secs,
             timeleft_secs,
             endtime: Local::now(),
             action_info: "   ".to_string(),
