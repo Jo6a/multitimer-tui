@@ -73,7 +73,6 @@ pub fn merge_timers(argument1: &str, argument2: &str, config: &mut Configuration
         argument1[..].parse::<usize>(),
         argument2[..].parse::<usize>(),
     ) {
-
         let mut id_1_found = false;
         let mut id_2_found = false;
 
@@ -88,9 +87,9 @@ pub fn merge_timers(argument1: &str, argument2: &str, config: &mut Configuration
 
         if id_1_found && id_2_found {
             let t = config.timers.remove(id2);
-        config.timers[id].description += &format!(" ({})", t.description);
-        config.timers[id].timeleft_secs += t.timeleft_secs;
-        config.timers[id].initial_time += t.timeleft_secs;
+            config.timers[id].description += &format!(" ({})", t.description);
+            config.timers[id].timeleft_secs += t.timeleft_secs;
+            config.timers[id].initial_time += t.timeleft_secs;
         }
     }
 }
