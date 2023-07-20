@@ -15,9 +15,9 @@ pub struct Configuration<'a> {
     pub reverseadding: bool,
     pub move_finished_timer: bool,
     pub action_timeout: String,
-    pub pomodoro_time: u16,
-    pub pomodoro_smallbreak: u16,
-    pub pomodoro_bigbreak: u16,
+    pub pomodoro_time: u64,
+    pub pomodoro_smallbreak: u64,
+    pub pomodoro_bigbreak: u64,
     pub timers: Vec<Timer>,
     #[serde(skip_serializing, skip_deserializing)]
     pub show_popup: bool,
@@ -49,9 +49,9 @@ pub struct Configuration<'a> {
 
 impl<'a> Configuration<'a> {
     pub fn new(
-        pomodoro_time: u16,
-        pomodoro_smallbreak: u16,
-        pomodoro_bigbreak: u16,
+        pomodoro_time: u64,
+        pomodoro_smallbreak: u64,
+        pomodoro_bigbreak: u64,
     ) -> Configuration<'a> {
         Configuration {
             pomodoro_time,
@@ -169,20 +169,20 @@ impl<'a> Configuration<'a> {
             self.pomodoro_time_table_str = "25".to_string();
             25
         } else {
-            self.pomodoro_time_table_str.parse::<u16>().unwrap()
+            self.pomodoro_time_table_str.parse::<u64>().unwrap()
         };
         self.pomodoro_smallbreak = if self.pomodoro_smallbreak_table_str.is_empty() {
             self.pomodoro_smallbreak_table_str = "5".to_string();
             5
         } else {
-            self.pomodoro_smallbreak_table_str.parse::<u16>().unwrap()
+            self.pomodoro_smallbreak_table_str.parse::<u64>().unwrap()
         };
 
         self.pomodoro_bigbreak = if self.pomodoro_bigbreak_table_str.is_empty() {
             self.pomodoro_bigbreak_table_str = "10".to_string();
             10
         } else {
-            self.pomodoro_bigbreak_table_str.parse::<u16>().unwrap()
+            self.pomodoro_bigbreak_table_str.parse::<u64>().unwrap()
         };
         self.write_to_file().unwrap();
     }
@@ -240,15 +240,15 @@ impl<'a> Configuration<'a> {
         argument2: &mut String,
         left_view: bool,
     ) -> Timer {
-        let hours: u16;
-        let minutes: u16;
-        let seconds: u16;
+        let hours: u64;
+        let minutes: u64;
+        let seconds: u64;
         if argument1.len() == 8 {
-            hours = argument1[0..2].parse::<u16>().unwrap_or_default();
-            minutes = argument1[3..5].parse::<u16>().unwrap_or_default();
-            seconds = argument1[6..8].parse::<u16>().unwrap_or_default();
+            hours = argument1[0..2].parse().unwrap_or_default();
+            minutes = argument1[3..5].parse().unwrap_or_default();
+            seconds = argument1[6..8].parse().unwrap_or_default();
         } else {
-            let min_entered = argument1[..].parse::<u16>().unwrap_or_default();
+            let min_entered = argument1[..].parse::<u64>().unwrap_or_default();
             if min_entered == 0 {
                 *argument2 = argument1.to_owned() + " " + &argument2[..]; /* no argument1 with minutes entered */
             }
