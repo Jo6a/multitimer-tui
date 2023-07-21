@@ -7,8 +7,9 @@ pub fn add_timer(
     routine: &str,
     config: &mut Configuration,
     reverse_adding: bool,
+    color_input: Option<String>,
 ) {
-    let timer = config.create_timer_for_input(argument1, argument2, routine != "add2");
+    let timer = config.create_timer_for_input(argument1, argument2, routine != "add2", color_input);
     config.add_timer_to_config(timer, reverse_adding);
 }
 
@@ -17,6 +18,7 @@ pub fn add_pomodoro_timer(config: &mut Configuration) {
         "Pomodoro-Timer".to_string(),
         config.pomodoro_time * 60,
         true,
+        Some(config.timer_colors["Focus"].to_owned()),
     );
     let timer2 = Timer::new(
         "Pomodoro-Break".to_string(),
@@ -26,6 +28,7 @@ pub fn add_pomodoro_timer(config: &mut Configuration) {
             config.pomodoro_smallbreak * 60
         },
         true,
+        Some(config.timer_colors["Break"].to_owned()),
     );
 
     config.add_timer_to_config(timer1, false);
@@ -154,17 +157,43 @@ pub fn parse_input(input: &str, config: &mut Configuration) {
     if input.is_empty() {
         return;
     }
+
     let mut parts = input.split_whitespace();
     let routine = parts.next().unwrap_or("");
     let argument1 = parts.next().unwrap_or("").to_string();
-    let mut argument2: String = parts.collect::<Vec<&str>>().join(" ");
+    let mut collected_argument2 = parts.collect::<Vec<&str>>();
+
+    // check if the 3rd argument is a valid color
+    let color_input = if collected_argument2.len() > 0 && config.timer_colors.contains_key(&collected_argument2[0].to_lowercase()) {
+        let color = Some(config.timer_colors[&collected_argument2[0].to_lowercase()].to_owned());
+        collected_argument2.remove(0);
+        color
+    } else {
+        None
+    };
+
+    let mut argument2 = collected_argument2.join(" ");
 
     match routine {
         "a" | "add" | "add2" => {
-            add_timer(&argument1, &mut argument2, routine, config, false);
+            add_timer(
+                &argument1,
+                &mut argument2,
+                routine,
+                config,
+                false,
+                color_input,
+            );
         }
         "ar" | "addr" => {
-            add_timer(&argument1, &mut argument2, routine, config, true);
+            add_timer(
+                &argument1,
+                &mut argument2,
+                routine,
+                config,
+                true,
+                color_input,
+            );
         }
         "addp" => {
             add_pomodoro_timer(config);

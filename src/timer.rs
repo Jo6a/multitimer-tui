@@ -16,10 +16,16 @@ pub struct Timer {
     pub endtime: DateTime<Local>,
     #[serde(skip_serializing, skip_deserializing)]
     pub action_info: String,
+    pub timer_type: Option<String>,
 }
 
 impl Timer {
-    pub fn new(description: String, timeleft_secs: u64, left_view: bool) -> Self {
+    pub fn new(
+        description: String,
+        timeleft_secs: u64,
+        left_view: bool,
+        timer_type: Option<String>,
+    ) -> Self {
         Self {
             id: 0,
             is_active: false,
@@ -29,6 +35,7 @@ impl Timer {
             timeleft_secs,
             endtime: Local::now(),
             action_info: "   ".to_string(),
+            timer_type,
         }
     }
 
