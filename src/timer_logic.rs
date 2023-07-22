@@ -18,7 +18,7 @@ pub fn add_pomodoro_timer(config: &mut Configuration) {
         "Pomodoro-Timer".to_string(),
         config.pomodoro_time * 60,
         true,
-        Some(config.timer_colors["Focus"].to_owned()),
+        Some(config.timer_colors["focus"].to_owned()),
     );
     let timer2 = Timer::new(
         "Pomodoro-Break".to_string(),
@@ -28,7 +28,7 @@ pub fn add_pomodoro_timer(config: &mut Configuration) {
             config.pomodoro_smallbreak * 60
         },
         true,
-        Some(config.timer_colors["Break"].to_owned()),
+        Some(config.timer_colors["break"].to_owned()),
     );
 
     config.add_timer_to_config(timer1, false);
@@ -164,8 +164,13 @@ pub fn parse_input(input: &str, config: &mut Configuration) {
     let mut collected_argument2 = parts.collect::<Vec<&str>>();
 
     // check if the 3rd argument is a valid color
-    let color_input = if collected_argument2.len() > 0 && config.timer_colors.contains_key(&collected_argument2[0].to_lowercase()) {
+    let color_input = if collected_argument2.len() > 0
+        && config
+            .timer_colors
+            .contains_key(&collected_argument2[0].to_lowercase())
+    {
         let color = Some(config.timer_colors[&collected_argument2[0].to_lowercase()].to_owned());
+        // remove the color argument from the input
         collected_argument2.remove(0);
         color
     } else {
