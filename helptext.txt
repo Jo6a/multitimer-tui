@@ -1,8 +1,8 @@
 Commands                        Description
-add [HH:MM:SS] [description]    adds a timer to the left column with the given time and description.
-add [minutes] [description]     adds a timer to the left column with the given minutes and description.
-add2 [minutes] [description]    adds a timer to the right column with the given minutes and description.
-addr [minutes] [description]    adds a timer to the left column in reverse order with the given minutes and description.
+add [HH:MM:SS] [type(optional)] [description]    adds a timer to the left column with the given time and description.
+add [minutes] [type(optional)]  [description]    adds a timer to the left column with the given minutes and description.
+add2 [minutes] [type(optional)] [description]    adds a timer to the right column with the given minutes and description.
+addr [minutes] [type(optional)] [description]    adds a timer to the left column in reverse order with the given minutes and description.
 addp                            adds a pair of Pomodoro timers to the left column with the durations specified in the Config tab.
 rm [id]                         removes the timer with the given id.
 clear                           removes all timers.

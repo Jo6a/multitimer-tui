@@ -1,12 +1,13 @@
 use chrono::Local;
 use ratatui::widgets::TableState;
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use std::str::FromStr;
 
 use crate::color::AcceptedColors;
 use crate::timer::Timer;
 use crate::ui_states::{ConfigType, TimerAction};
-use crate::utils::reverse_bool;
+use crate::utils::{get_initial_timer_colors, reverse_bool};
 
 #[derive(Serialize, Deserialize)]
 pub struct Configuration<'a> {
@@ -19,6 +20,7 @@ pub struct Configuration<'a> {
     pub pomodoro_smallbreak: u64,
     pub pomodoro_bigbreak: u64,
     pub timers: Vec<Timer>,
+    pub timer_colors: HashMap<String, String>,
     #[serde(skip_serializing, skip_deserializing)]
     pub show_popup: bool,
     #[serde(skip_serializing, skip_deserializing)]
@@ -58,6 +60,7 @@ impl<'a> Configuration<'a> {
             pomodoro_smallbreak,
             pomodoro_bigbreak,
             timers: Vec::new(),
+            timer_colors: get_initial_timer_colors(),
             darkmode: true,
             activecolor: "Green".to_string(),
             reverseadding: false,
@@ -98,7 +101,7 @@ impl<'a> Configuration<'a> {
     pub fn next_table_entry(&mut self) {
         let i = match self.state.selected() {
             Some(i) => {
-                if i >= 7 {
+                if i >= 15 {
                     0
                 } else {
                     i + 1
@@ -114,7 +117,7 @@ impl<'a> Configuration<'a> {
         let i = match self.state.selected() {
             Some(i) => {
                 if i == 0 {
-                    7
+                    15
                 } else {
                     i - 1
                 }
@@ -239,6 +242,7 @@ impl<'a> Configuration<'a> {
         argument1: &String,
         argument2: &mut String,
         left_view: bool,
+        color_input: Option<String>,
     ) -> Timer {
         let hours: u64;
         let minutes: u64;
@@ -260,6 +264,7 @@ impl<'a> Configuration<'a> {
             argument2.to_owned(),
             seconds + minutes * 60 + hours * 3600,
             left_view,
+            color_input,
         )
     }
 
@@ -318,6 +323,16 @@ impl<'a> Configuration<'a> {
                 }
                 self.pomodoro_bigbreak_table_str = parsed_value.to_string();
             }
+            _ => {
+                // rest of the enum are color variants
+                let config_name = self.config_type.to_string();
+                let config_color = &self.timer_colors[&config_name];
+                let new_color_name = AcceptedColors::from_str(config_color)
+                    .unwrap()
+                    .next_color()
+                    .to_string();
+                self.timer_colors.insert(config_name, new_color_name);
+            }
         };
     }
 
@@ -362,6 +377,16 @@ impl<'a> Configuration<'a> {
                     parsed_value -= 1;
                 }
                 self.pomodoro_bigbreak_table_str = parsed_value.to_string();
+            }
+            _ => {
+                // rest of the enum are color variants
+                let config_name = self.config_type.to_string();
+                let config_color = &self.timer_colors[&config_name];
+                let new_color_name = AcceptedColors::from_str(config_color)
+                    .unwrap()
+                    .previous_color()
+                    .to_string();
+                self.timer_colors.insert(config_name, new_color_name);
             }
         };
     }

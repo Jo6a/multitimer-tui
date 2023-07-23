@@ -218,23 +218,32 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, config: &mut Configuration, input_field:
         // loop for timers
         // len -2 because last 2 are used for rendering the empty fields and the input field
         for i in 1..chunks.len() - 2 {
-            let mut paragraph = Paragraph::new(left_view_timers[i - 1].formatted())
+            let current_timer = left_view_timers[i - 1];
+
+            let current_timer_color =
+                if current_timer.timer_type.is_some() && current_timer.is_active {
+                    AcceptedColors::from_str(current_timer.timer_type.as_ref().unwrap())
+                        .unwrap()
+                        .to_color()
+                } else if current_timer.is_active {
+                    AcceptedColors::from_str(&config.activecolor)
+                        .unwrap()
+                        .to_color()
+                } else {
+                    Color::DarkGray
+                };
+
+            let mut paragraph = Paragraph::new(current_timer.formatted())
                 .block(Block::default().borders(Borders::ALL))
                 .style(
                     Style::default()
-                        .fg(if left_view_timers[i - 1].is_active {
-                            AcceptedColors::from_str(&config.activecolor)
-                                .unwrap()
-                                .to_color()
-                        } else {
-                            Color::DarkGray
-                        })
+                        .fg(current_timer_color)
                         .bg(get_background_color(config.darkmode)),
                 );
 
             // if the timer is not active, only render the text on the entire chunk
             // otherwise divide the chunk into 2 smaller chunks and render text + gauge
-            if !left_view_timers[i - 1].is_active {
+            if !current_timer.is_active {
                 f.render_widget(paragraph, chunks[i]);
             } else {
                 paragraph = paragraph
@@ -246,25 +255,13 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, config: &mut Configuration, input_field:
                             .borders(Borders::BOTTOM | Borders::LEFT | Borders::RIGHT)
                             .border_style(
                                 Style::default()
-                                    .fg(if left_view_timers[i - 1].is_active {
-                                        AcceptedColors::from_str(&config.activecolor)
-                                            .unwrap()
-                                            .to_color()
-                                    } else {
-                                        Color::DarkGray
-                                    })
+                                    .fg(current_timer_color)
                                     .bg(get_background_color(config.darkmode)),
                             ),
                     )
                     .gauge_style(
                         Style::default()
-                            .fg(if left_view_timers[i - 1].is_active {
-                                AcceptedColors::from_str(&config.activecolor)
-                                    .unwrap()
-                                    .to_color()
-                            } else {
-                                Color::DarkGray
-                            })
+                            .fg(current_timer_color)
                             .bg(get_background_color(config.darkmode))
                             .add_modifier(Modifier::ITALIC),
                     )
@@ -325,23 +322,31 @@ pub fn timertab_rendering<B: Backend>(
         // loop for timers2
         // len -2 because last 2 are used for rendering the empty fields and the input field
         for i in 1..chunks2.len() - 2 {
-            let mut paragraph = Paragraph::new(right_view_timers[i - 1].formatted())
+            let current_timer = right_view_timers[i - 1];
+            let current_timer_color =
+                if current_timer.timer_type.is_some() && current_timer.is_active {
+                    AcceptedColors::from_str(current_timer.timer_type.as_ref().unwrap())
+                        .unwrap()
+                        .to_color()
+                } else if current_timer.is_active {
+                    AcceptedColors::from_str(&config.activecolor)
+                        .unwrap()
+                        .to_color()
+                } else {
+                    Color::DarkGray
+                };
+
+            let mut paragraph = Paragraph::new(current_timer.formatted())
                 .block(Block::default().borders(Borders::ALL))
                 .style(
                     Style::default()
-                        .fg(if right_view_timers[i - 1].is_active {
-                            AcceptedColors::from_str(&config.activecolor)
-                                .unwrap()
-                                .to_color()
-                        } else {
-                            Color::DarkGray
-                        })
+                        .fg(current_timer_color)
                         .bg(get_background_color(config.darkmode)),
                 );
 
             // if the timer is not active, only render the text on the entire chunk
             // otherwise divide the chunk into 2 smaller chunks and render text + gauge
-            if !right_view_timers[i - 1].is_active {
+            if !current_timer.is_active {
                 f.render_widget(paragraph, chunks2[i]);
             } else {
                 paragraph = paragraph
@@ -353,25 +358,13 @@ pub fn timertab_rendering<B: Backend>(
                             .borders(Borders::BOTTOM | Borders::LEFT | Borders::RIGHT)
                             .border_style(
                                 Style::default()
-                                    .fg(if right_view_timers[i - 1].is_active {
-                                        AcceptedColors::from_str(&config.activecolor)
-                                            .unwrap()
-                                            .to_color()
-                                    } else {
-                                        Color::DarkGray
-                                    })
+                                    .fg(current_timer_color)
                                     .bg(get_background_color(config.darkmode)),
                             ),
                     )
                     .gauge_style(
                         Style::default()
-                            .fg(if right_view_timers[i - 1].is_active {
-                                AcceptedColors::from_str(&config.activecolor)
-                                    .unwrap()
-                                    .to_color()
-                            } else {
-                                Color::DarkGray
-                            })
+                            .fg(current_timer_color)
                             .bg(get_background_color(config.darkmode))
                             .add_modifier(Modifier::ITALIC),
                     )
@@ -491,6 +484,38 @@ pub fn configtab_rendering<B: Backend>(
         vec![
             "Pomodoro Big Break Time".to_string(),
             config.pomodoro_bigbreak_table_str.to_owned(),
+        ],
+        vec![
+            "Urgent Color".to_string(),
+            config.timer_colors["urgent"].to_owned(),
+        ],
+        vec![
+            "Important Color".to_string(),
+            config.timer_colors["important"].to_owned(),
+        ],
+        vec![
+            "Focus Color".to_string(),
+            config.timer_colors["focus"].to_owned(),
+        ],
+        vec![
+            "Break Color".to_string(),
+            config.timer_colors["break"].to_owned(),
+        ],
+        vec![
+            "Study Color".to_string(),
+            config.timer_colors["study"].to_owned(),
+        ],
+        vec![
+            "Coding Color".to_string(),
+            config.timer_colors["coding"].to_owned(),
+        ],
+        vec![
+            "Casual Color".to_string(),
+            config.timer_colors["casual"].to_owned(),
+        ],
+        vec![
+            "Fun Color".to_string(),
+            config.timer_colors["fun"].to_owned(),
         ],
     ];
     let rows = items.iter().map(|item| {
