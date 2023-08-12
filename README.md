@@ -37,7 +37,8 @@ You can also edit or delete existing timers by using these commands:
 - `plus [id] [minutes]`: increases the time left of the timer with id by minutes.
 - `minus [id] [minutes]`: decreases the time left of the timer with id by minutes.
 - `rename [id] [description]`: changes the description of the timer with id to description.
-- `repeat [id] [times]`: repeats the timer with id given amount of times.
+- `repeat [id] [interval]`: repeats the timer with id given amount of times.
+
 You can also pause or resume all timers by pressing Space.
 
 In the Config tab, you can see a table with various configuration options that you can change.
