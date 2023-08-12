@@ -153,6 +153,26 @@ pub fn rename_timer(argument1: String, config: &mut Configuration, argument2: St
     }
 }
 
+pub fn repeat_timer(argument1: &str, argument2: &str, config: &mut Configuration) {
+    let id = match argument1[..].parse::<u16>() {
+        Ok(id) => id,
+        Err(_) => {
+            return;
+        }
+    };
+    let times = match argument2[..].parse::<u64>() {
+        Ok(times) => times,
+        Err(_) => {
+             return;
+        }
+    };
+    for t in &mut config.timers {
+        if t.id == id {
+           t.repeat_times = times;
+        }
+    }
+}
+
 pub fn parse_input(input: &str, config: &mut Configuration) {
     if input.is_empty() {
         return;
@@ -229,6 +249,9 @@ pub fn parse_input(input: &str, config: &mut Configuration) {
         }
         "rn" | "rename" => {
             rename_timer(argument1, config, argument2);
+        }
+        "repeat" => {
+            repeat_timer(&argument1, &argument2, config);
         }
         _ => {}
     }
