@@ -6,7 +6,7 @@ multitimer-tui is a productivity tool that lets you attach timers to a To-Do Lis
 
 This project has several features that make it a useful and versatile tool for managing timers. Some of these features are:
 
-- ✏️ Modify existing timers in various ways. 
+- ✏️ Modify existing timers in various ways.
 - ⏯️ Pause or resume all timers by pressing Space.
 - 🍅 Pomodoro timers are supported, which are a popular technique for time management and productivity.
 - ⚡ Actions after all timers done: None, Hibernate or Shutdown.
@@ -37,6 +37,7 @@ You can also edit or delete existing timers by using these commands:
 - `plus [id] [minutes]`: increases the time left of the timer with id by minutes.
 - `minus [id] [minutes]`: decreases the time left of the timer with id by minutes.
 - `rename [id] [description]`: changes the description of the timer with id to description.
+- `repeat [id] [interval]`: repeats the timer with id given amount of times.
 
 You can also pause or resume all timers by pressing Space.
 

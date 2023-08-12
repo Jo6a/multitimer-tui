@@ -13,6 +13,7 @@ merge [id1] [id2]               merges the timer with id1 with the timer with id
 plus [id] [minutes]             increases the time left of the timer with id by minutes.
 minus [id] [minutes]            decreases the time left of the timer with id by minutes.
 rename [id] [description]       changes the description of the timer with id to description.
+repeat [id] [interval]          repeats the timer with id given amount of times.
 
 Tab Key                         Switch Tab
 Arrow Key                       Change configuration
