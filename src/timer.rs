@@ -83,7 +83,7 @@ impl Timer {
                     .spawn();
             } else if cfg!(target_os = "windows") {
                 let _ = Command::new("msg")
-                    .args(["*", "Timer beendet", &self.description])
+                    .args(["*", "/time:2", "Timer beendet", &self.description])
                     .spawn();
             }
             if self.repeat_times > 0 {

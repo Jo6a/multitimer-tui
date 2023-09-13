@@ -25,7 +25,10 @@ use multitimer_tui::ui;
 fn main() -> Result<(), Box<dyn Error>> {
     enable_raw_mode()?;
     let mut stdout = io::stdout();
-    execute!(stdout, EnterAlternateScreen, DisableMouseCapture)?;
+    let os = env::consts::OS;
+    if os == "linux" {
+        execute!(stdout, EnterAlternateScreen, DisableMouseCapture)?;
+    }
     let backend = CrosstermBackend::new(stdout);
     let mut terminal = Terminal::new(backend)?;
 

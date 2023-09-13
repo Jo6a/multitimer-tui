@@ -163,12 +163,12 @@ pub fn repeat_timer(argument1: &str, argument2: &str, config: &mut Configuration
     let times = match argument2[..].parse::<u64>() {
         Ok(times) => times,
         Err(_) => {
-             return;
+            return;
         }
     };
     for t in &mut config.timers {
         if t.id == id {
-           t.repeat_times = times;
+            t.repeat_times = times;
         }
     }
 }
