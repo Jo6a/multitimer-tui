@@ -32,12 +32,16 @@ pub fn handle_key_press(
             KeyCode::Tab => config.next(),
             KeyCode::Left => input_field.move_cursor_left(),
             KeyCode::Right => input_field.move_cursor_right(),
+            KeyCode::Up => input_field.move_history_up(),
+            KeyCode::Down => input_field.move_history_down(),
             KeyCode::Esc => {
                 input_field.content.clear();
                 input_field.cursor_position = 0;
             }
             KeyCode::Enter => {
                 parse_input(&input_field.content, config);
+                input_field.content_history.push(input_field.content.clone());
+                input_field.history_position += 1;
                 input_field.content.clear();
                 input_field.cursor_position = 0;
             }
