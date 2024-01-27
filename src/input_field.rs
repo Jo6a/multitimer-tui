@@ -2,7 +2,7 @@ pub struct InputField {
     pub content: String,
     pub cursor_position: usize,
     pub content_history: Vec<String>,
-    pub history_position: usize
+    pub history_position: usize,
 }
 
 impl Default for InputField {
@@ -16,7 +16,7 @@ impl InputField {
         Self {
             content: String::new(),
             cursor_position: 0,
-            content_history: vec!(),
+            content_history: vec![],
             history_position: 0,
         }
     }

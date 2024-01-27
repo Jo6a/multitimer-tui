@@ -40,7 +40,9 @@ pub fn handle_key_press(
             }
             KeyCode::Enter => {
                 parse_input(&input_field.content, config);
-                input_field.content_history.push(input_field.content.clone());
+                input_field
+                    .content_history
+                    .push(input_field.content.clone());
                 input_field.history_position += 1;
                 input_field.content.clear();
                 input_field.cursor_position = 0;

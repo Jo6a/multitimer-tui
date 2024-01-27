@@ -84,9 +84,15 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, tick_rate: Duration) -> io::R
                         done_timers.push(i);
                     }
                 }
-                for &i in done_timers.iter().rev() {
-                    let t = config.timers.remove(i);
-                    config.timers.push(t);
+
+                if config.move_finished_timer {
+                    for &i in done_timers.iter().rev() {
+                        let t = config.timers.remove(i);
+                        config.timers.push(t);
+                    }
+                    if !done_timers.is_empty() {
+                        config.update_timers();
+                    }
                 }
 
                 if config.action_timeout != "None"
