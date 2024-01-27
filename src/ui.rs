@@ -491,38 +491,6 @@ pub fn configtab_rendering<B: Backend>(
             "Pomodoro Big Break Time".to_string(),
             config.pomodoro_bigbreak_table_str.to_owned(),
         ],
-        vec![
-            "Urgent Color".to_string(),
-            config.timer_colors["urgent"].to_owned(),
-        ],
-        vec![
-            "Important Color".to_string(),
-            config.timer_colors["important"].to_owned(),
-        ],
-        vec![
-            "Focus Color".to_string(),
-            config.timer_colors["focus"].to_owned(),
-        ],
-        vec![
-            "Break Color".to_string(),
-            config.timer_colors["break"].to_owned(),
-        ],
-        vec![
-            "Study Color".to_string(),
-            config.timer_colors["study"].to_owned(),
-        ],
-        vec![
-            "Coding Color".to_string(),
-            config.timer_colors["coding"].to_owned(),
-        ],
-        vec![
-            "Casual Color".to_string(),
-            config.timer_colors["casual"].to_owned(),
-        ],
-        vec![
-            "Fun Color".to_string(),
-            config.timer_colors["fun"].to_owned(),
-        ],
     ];
     let rows = items.iter().map(|item| {
         let height = item

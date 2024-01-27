@@ -7,7 +7,7 @@ use std::str::FromStr;
 use crate::color::AcceptedColors;
 use crate::timer::Timer;
 use crate::ui_states::{ConfigType, TimerAction};
-use crate::utils::{get_initial_timer_colors, reverse_bool};
+use crate::utils::{get_optional_timer_colors, reverse_bool};
 
 #[derive(Serialize, Deserialize)]
 pub struct Configuration<'a> {
@@ -60,7 +60,7 @@ impl<'a> Configuration<'a> {
             pomodoro_smallbreak,
             pomodoro_bigbreak,
             timers: Vec::new(),
-            timer_colors: get_initial_timer_colors(),
+            timer_colors: get_optional_timer_colors(),
             darkmode: true,
             activecolor: "Green".to_string(),
             reverseadding: false,
@@ -101,7 +101,7 @@ impl<'a> Configuration<'a> {
     pub fn next_table_entry(&mut self) {
         let i = match self.state.selected() {
             Some(i) => {
-                if i >= 15 {
+                if i >= 7 {
                     0
                 } else {
                     i + 1
@@ -117,7 +117,7 @@ impl<'a> Configuration<'a> {
         let i = match self.state.selected() {
             Some(i) => {
                 if i == 0 {
-                    15
+                    7
                 } else {
                     i - 1
                 }
@@ -323,16 +323,6 @@ impl<'a> Configuration<'a> {
                 }
                 self.pomodoro_bigbreak_table_str = parsed_value.to_string();
             }
-            _ => {
-                // rest of the enum are color variants
-                let config_name = self.config_type.to_string();
-                let config_color = &self.timer_colors[&config_name];
-                let new_color_name = AcceptedColors::from_str(config_color)
-                    .unwrap()
-                    .next_color()
-                    .to_string();
-                self.timer_colors.insert(config_name, new_color_name);
-            }
         };
     }
 
@@ -377,16 +367,6 @@ impl<'a> Configuration<'a> {
                     parsed_value -= 1;
                 }
                 self.pomodoro_bigbreak_table_str = parsed_value.to_string();
-            }
-            _ => {
-                // rest of the enum are color variants
-                let config_name = self.config_type.to_string();
-                let config_color = &self.timer_colors[&config_name];
-                let new_color_name = AcceptedColors::from_str(config_color)
-                    .unwrap()
-                    .previous_color()
-                    .to_string();
-                self.timer_colors.insert(config_name, new_color_name);
             }
         };
     }

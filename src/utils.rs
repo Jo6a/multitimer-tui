@@ -6,7 +6,7 @@ pub fn reverse_bool(input: &str) -> String {
 }
 
 /// Default timer types and their colors
-pub fn get_initial_timer_colors() -> HashMap<String, String> {
+pub fn get_optional_timer_colors() -> HashMap<String, String> {
     HashMap::from([
         ("urgent".to_string(), "Red".to_string()),
         ("important".to_string(), "Blue".to_string()),

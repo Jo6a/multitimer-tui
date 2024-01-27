@@ -24,14 +24,6 @@ pub enum ConfigType {
     PomodoroTime,
     PomodoroSmallBreak,
     PomodoroBigBreak,
-    UrgentColor,
-    ImportantColor,
-    FocusColor,
-    BreakColor,
-    StudyColor,
-    CodingColor,
-    CasualColor,
-    FunColor,
 }
 
 impl Default for ConfigType {
@@ -50,21 +42,13 @@ impl ConfigType {
             ConfigType::ActionAfterTimer => ConfigType::PomodoroTime,
             ConfigType::PomodoroTime => ConfigType::PomodoroSmallBreak,
             ConfigType::PomodoroSmallBreak => ConfigType::PomodoroBigBreak,
-            ConfigType::PomodoroBigBreak => ConfigType::UrgentColor,
-            ConfigType::UrgentColor => ConfigType::ImportantColor,
-            ConfigType::ImportantColor => ConfigType::FocusColor,
-            ConfigType::FocusColor => ConfigType::BreakColor,
-            ConfigType::BreakColor => ConfigType::StudyColor,
-            ConfigType::StudyColor => ConfigType::CodingColor,
-            ConfigType::CodingColor => ConfigType::CasualColor,
-            ConfigType::CasualColor => ConfigType::FunColor,
-            ConfigType::FunColor => ConfigType::DarkMode,
+            ConfigType::PomodoroBigBreak => ConfigType::DarkMode,
         };
     }
 
     pub fn previous(&mut self) {
         *self = match self {
-            ConfigType::DarkMode => ConfigType::FunColor,
+            ConfigType::DarkMode => ConfigType::PomodoroBigBreak,
             ConfigType::ActiveColor => ConfigType::DarkMode,
             ConfigType::ReverseAddingTimer => ConfigType::ActiveColor,
             ConfigType::MoveFinishedTimer => ConfigType::ReverseAddingTimer,
@@ -72,14 +56,6 @@ impl ConfigType {
             ConfigType::PomodoroTime => ConfigType::ActionAfterTimer,
             ConfigType::PomodoroSmallBreak => ConfigType::PomodoroTime,
             ConfigType::PomodoroBigBreak => ConfigType::PomodoroSmallBreak,
-            ConfigType::UrgentColor => ConfigType::PomodoroBigBreak,
-            ConfigType::ImportantColor => ConfigType::UrgentColor,
-            ConfigType::FocusColor => ConfigType::ImportantColor,
-            ConfigType::BreakColor => ConfigType::FocusColor,
-            ConfigType::StudyColor => ConfigType::BreakColor,
-            ConfigType::CodingColor => ConfigType::StudyColor,
-            ConfigType::CasualColor => ConfigType::CodingColor,
-            ConfigType::FunColor => ConfigType::CasualColor,
         }
     }
 }
@@ -87,14 +63,6 @@ impl ConfigType {
 impl fmt::Display for ConfigType {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            ConfigType::UrgentColor => write!(f, "urgent"),
-            ConfigType::ImportantColor => write!(f, "important"),
-            ConfigType::FocusColor => write!(f, "focus"),
-            ConfigType::BreakColor => write!(f, "break"),
-            ConfigType::StudyColor => write!(f, "study"),
-            ConfigType::CodingColor => write!(f, "coding"),
-            ConfigType::CasualColor => write!(f, "casual"),
-            ConfigType::FunColor => write!(f, "fun"),
             _ => write!(f, ""),
         }
     }
