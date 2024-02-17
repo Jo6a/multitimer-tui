@@ -255,6 +255,6 @@ pub fn parse_input(input: &str, config: &mut Configuration) {
         }
         _ => {}
     }
-    config.write_to_file().unwrap();
+    config.write_config_to_file().unwrap();
     config.update_timers();
 }

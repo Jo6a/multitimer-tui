@@ -3,10 +3,12 @@ use ratatui::widgets::TableState;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::str::FromStr;
+use std::vec;
+use std::path::Path;
 
 use crate::color::AcceptedColors;
 use crate::timer::Timer;
-use crate::ui_states::{ConfigType, TimerAction};
+use crate::ui_states::{ConfigType, TimerAction, UiState};
 use crate::utils::{get_optional_timer_colors, reverse_bool};
 
 #[derive(Serialize, Deserialize)]
@@ -28,7 +30,9 @@ pub struct Configuration<'a> {
     #[serde(skip_serializing, skip_deserializing)]
     pub index: usize,
     #[serde(skip_serializing, skip_deserializing)]
-    pub state: TableState,
+    pub table_state_sets: TableState,
+    #[serde(skip_serializing, skip_deserializing)]
+    pub table_state_config: TableState,
     #[serde(skip_serializing, skip_deserializing)]
     pub darkmode_str: String,
     #[serde(skip_serializing, skip_deserializing)]
@@ -69,7 +73,8 @@ impl<'a> Configuration<'a> {
             show_popup: false,
             titles: Vec::new(),
             index: 0,
-            state: TableState::default(),
+            table_state_sets: TableState::default(),
+            table_state_config: TableState::default(),
             darkmode_str: "".to_string(),
             activecolor_str: "".to_string(),
             reverseadding_str: "".to_string(),
@@ -82,8 +87,35 @@ impl<'a> Configuration<'a> {
         }
     }
 
-    pub fn write_to_file(&self) -> Result<(), std::io::Error> {
+    pub fn write_config_to_file(&self) -> Result<(), std::io::Error> {
         std::fs::write("config.json", serde_json::to_string_pretty(self).unwrap())
+    }
+
+    pub fn write_set_to_file(&self, set_name : String, set : &Vec<Timer>) -> Result<(), std::io::Error> {
+        let path = Path::new("sets");
+
+        if !path.exists() {
+            std::fs::create_dir_all(path)?;
+        }
+        let file_path = path.join(format!("{set_name}.json"));
+        std::fs::write(file_path,
+        serde_json::to_string_pretty(set).unwrap())
+    }
+
+    pub fn read_set_files(&self) -> std::io::Result<Vec<String>> {
+        let mut sets = Vec::new();
+        let path = Path::new("sets");
+    
+        let entries: std::fs::ReadDir = std::fs::read_dir(path)?;
+    
+        for entry in entries {
+            let entry = entry?;
+            let path = entry.path();
+            if let Some(filename) = path.file_name().and_then(|name| name.to_str()) {
+                sets.push(filename.to_owned());
+            }
+        }
+        Ok(sets)
     }
 
     pub fn next(&mut self) {
@@ -99,37 +131,76 @@ impl<'a> Configuration<'a> {
     }
 
     pub fn next_table_entry(&mut self) {
-        let i = match self.state.selected() {
-            Some(i) => {
-                if i >= 7 {
-                    0
-                } else {
-                    i + 1
-                }
+        let current_ui = UiState::get_current_ui(self.index);
+        match current_ui {
+            UiState::ConfigUi => {
+                let i = match self.table_state_config.selected() {
+                    Some(i) => {
+                        if i >= 7 {
+                            0
+                        } else {
+                            i + 1
+                        }
+                    }
+                    None => 0,
+                };
+                self.table_state_config.select(Some(i));
+                self.config_type.next();
             }
-            None => 0,
-        };
-        self.state.select(Some(i));
-        self.config_type.next();
+            UiState::SetsUi => {
+                let i = match self.table_state_sets.selected() {
+                    Some(i) => {
+                        if i >= 7 {
+                            0
+                        } else {
+                            i + 1
+                        }
+                    }
+                    None => 0,
+                };
+                self.table_state_sets.select(Some(i));
+            }
+            _ => {}
+        }
+        
     }
 
     pub fn previous_table_entry(&mut self) {
-        let i = match self.state.selected() {
-            Some(i) => {
-                if i == 0 {
-                    7
-                } else {
-                    i - 1
-                }
+        let current_ui = UiState::get_current_ui(self.index);
+        match current_ui {
+            UiState::ConfigUi => {
+                let i = match self.table_state_config.selected() {
+                    Some(i) => {
+                        if i == 0 {
+                            7
+                        } else {
+                            i - 1
+                        }
+                    }
+                    None => 0,
+                };
+                self.table_state_config.select(Some(i));
+                self.config_type.previous();
             }
-            None => 0,
-        };
-        self.state.select(Some(i));
-        self.config_type.previous();
+            UiState::SetsUi => {
+                let i = match self.table_state_sets.selected() {
+                    Some(i) => {
+                        if i == 0 {
+                            7
+                        } else {
+                            i - 1
+                        }
+                    }
+                    None => 0,
+                };
+                self.table_state_sets.select(Some(i));
+            }
+            _ => {}
+        }
     }
 
     pub fn clear_table_entry(&mut self) {
-        match self.state.selected().unwrap() {
+        match self.table_state_config.selected().unwrap() {
             0 => self.darkmode_str.clear(),
             1 => self.activecolor_str.clear(),
             2 => self.reverseadding_str.clear(),
@@ -187,7 +258,21 @@ impl<'a> Configuration<'a> {
         } else {
             self.pomodoro_bigbreak_table_str.parse::<u64>().unwrap()
         };
-        self.write_to_file().unwrap();
+        self.write_config_to_file().unwrap();
+    }
+
+    pub fn apply_set(&mut self) {
+        match self.table_state_config.selected().unwrap() {
+            0 => self.darkmode_str.clear(),
+            1 => self.activecolor_str.clear(),
+            2 => self.reverseadding_str.clear(),
+            3 => self.move_finished_timer_str.clear(),
+            4 => self.action_timeout_str.clear(),
+            5 => self.pomodoro_time_table_str.clear(),
+            6 => self.pomodoro_smallbreak_table_str.clear(),
+            7 => self.pomodoro_bigbreak_table_str.clear(),
+            _ => {}
+        }
     }
 
     pub fn update_timers(&mut self) {
@@ -227,6 +312,7 @@ impl<'a> Configuration<'a> {
                 self.timers[i].action_info = action_display.to_string();
             }
         }
+        self.write_set_to_file("testset".to_string(), &self.timers).unwrap();
     }
 
     pub fn add_timer_to_config(&mut self, timer: Timer, reverse_adding: bool) {

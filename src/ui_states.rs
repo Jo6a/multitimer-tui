@@ -2,6 +2,7 @@ use std::{fmt, str::FromStr};
 
 pub enum UiState {
     TimerUi,
+    SetsUi,
     ConfigUi,
 }
 
@@ -9,7 +10,8 @@ impl UiState {
     pub fn get_current_ui(index: usize) -> Self {
         match index {
             0 => UiState::TimerUi,
-            1 => UiState::ConfigUi,
+            1 => UiState::SetsUi,
+            2 => UiState::ConfigUi,
             _ => UiState::TimerUi,
         }
     }

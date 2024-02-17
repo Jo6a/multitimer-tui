@@ -58,7 +58,7 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, tick_rate: Duration) -> io::R
         .map(|data| serde_json::from_str(&data).unwrap_or(Configuration::new(25, 5, 10)))
         .unwrap_or(Configuration::new(25, 5, 10));
 
-    config.titles = vec!["Timer [1]", "Config [2]"];
+    config.titles = vec!["Timer [1]", "Sets [2]", "Config [3]"];
     config.update_timers();
 
     let mut pause_flag: bool = false;
@@ -129,7 +129,7 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, tick_rate: Duration) -> io::R
             terminal.draw(|f| ui::ui(f, &mut config, &input_field))?;
 
             if i % 30 == 0 {
-                config.write_to_file().unwrap();
+                config.write_config_to_file().unwrap();
             }
         }
 

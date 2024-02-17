@@ -67,6 +67,13 @@ pub fn handle_key_press(
             KeyCode::Backspace => input_field.delete_char(),
             _ => {}
         },
+        UiState::SetsUi => match key.code {
+            KeyCode::Tab => config.next(),
+            KeyCode::Enter => config.save_table_changes(),
+            KeyCode::Up => config.previous_table_entry(),
+            KeyCode::Down => config.next_table_entry(),
+            _ => {}
+        },
         UiState::ConfigUi => match key.code {
             KeyCode::Tab => config.next(),
             KeyCode::Esc => config.clear_table_entry(),
@@ -309,6 +316,9 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, config: &mut Configuration, input_field:
             size,
         );
     } else if config.index == 1 {
+        setstab_rendering(config, f, chunks_index1);
+    } 
+    else if config.index == 2 {
         configtab_rendering(config, f, chunks_index1);
     }
 }
@@ -434,6 +444,67 @@ pub fn timertab_rendering<B: Backend>(
     }
 }
 
+pub fn setstab_rendering<B: Backend>(
+    config: &mut Configuration,
+    f: &mut Frame<B>,
+    chunks: Vec<Rect>,
+) {
+    let selected_style = Style::default().add_modifier(Modifier::REVERSED);
+    let header_cells = ["Sets"]
+        .iter()
+        .map(|h| Cell::from(*h).style(Style::default().fg(get_foreground_color(config.darkmode))));
+    let header = Row::new(header_cells)
+        .style(
+            Style::default().bg(AcceptedColors::from_str(&config.activecolor)
+                .unwrap()
+                .to_color()),
+        )
+        .height(1)
+        .bottom_margin(1);
+
+    let items = config.read_set_files().unwrap();
+    let rows = items.iter().map(|item| {
+        let height = //item
+            //.iter()
+            //map(|content| content.chars().filter(|c| *c == '\n').count())
+            //.max()
+            //.unwrap_or(0)
+            1;
+        let cells = item;//.iter().map(|c| Cell::from(&c[..]));
+        Row::new(vec![Cell::from(item.to_string())]).height(height as u16).bottom_margin(1)
+    });
+    let t: Table<'_> = Table::new(rows)
+        .header(header)
+        .block(Block::default().borders(Borders::ALL))
+        .highlight_style(selected_style)
+        .highlight_symbol(">> ")
+        .widths(&[
+            Constraint::Percentage(50),
+            Constraint::Length(30),
+            Constraint::Min(10),
+        ]);
+
+    // prevent selecting nothing on Sets tab
+    if config.table_state_sets.selected().is_none() {
+        config.table_state_sets.select(Some(0))
+    }
+    f.render_stateful_widget(t, chunks[1], &mut config.table_state_sets);
+    //* */
+    let text = "Press <ENTER> to save the configuration";
+    let paragraph = Paragraph::new(Span::styled(
+        text,
+        Style::default()
+            .add_modifier(Modifier::ITALIC)
+            .fg(AcceptedColors::from_str(&config.activecolor)
+                .unwrap()
+                .to_color())
+            .bg(get_background_color(config.darkmode)),
+    ))
+    .alignment(Alignment::Center)
+    .wrap(Wrap { trim: true });
+    f.render_widget(paragraph, chunks[chunks.len() - 1]);
+}
+
 pub fn configtab_rendering<B: Backend>(
     config: &mut Configuration,
     f: &mut Frame<B>,
@@ -451,7 +522,7 @@ pub fn configtab_rendering<B: Backend>(
         )
         .height(1)
         .bottom_margin(1);
-    if config.state.selected().is_none() {
+    if config.table_state_config.selected().is_none() {
         config.darkmode_str = config.darkmode.to_string();
         config.activecolor_str = config.activecolor.clone();
         config.reverseadding_str = config.reverseadding.to_string();
@@ -514,10 +585,10 @@ pub fn configtab_rendering<B: Backend>(
         ]);
 
     // prevent selecting nothing on Config tab
-    if config.state.selected().is_none() {
-        config.state.select(Some(0))
+    if config.table_state_config.selected().is_none() {
+        config.table_state_config.select(Some(0))
     }
-    f.render_stateful_widget(t, chunks[1], &mut config.state);
+    f.render_stateful_widget(t, chunks[1], &mut config.table_state_config);
     //* */
     let text = "Press <ENTER> to save the configuration";
     let paragraph = Paragraph::new(Span::styled(
