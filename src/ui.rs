@@ -73,6 +73,10 @@ pub fn handle_key_press(
                 let files_len = config.read_set_files().unwrap().len();
                 config.write_set_to_file(format!("testset{}", files_len)).unwrap()
             }
+            KeyCode::Delete | KeyCode::Backspace => {
+                let files = config.read_set_files().unwrap();
+                config.delete_set_file();
+            }
             KeyCode::Enter => {
                 let timers = config.apply_set().unwrap();
                 config.timers = timers;

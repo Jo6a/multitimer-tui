@@ -118,6 +118,20 @@ impl<'a> Configuration<'a> {
         Ok(sets)
     }
 
+    pub fn delete_set_file(&self) -> Result<(), std::io::Error> {
+        let items = self.read_set_files().unwrap();
+        let index = self.table_state_sets.selected().unwrap();
+        let name = &items[index];
+
+        let path = Path::new("sets");
+        let file_path = path.join(format!("{}", name));
+        if file_path.exists() {
+            std::fs::remove_file(file_path)
+        } else {
+            Err(std::io::Error::new(std::io::ErrorKind::NotFound, "Set file not found"))
+        }
+    }
+
     pub fn apply_set(&self) -> std::io::Result<Vec<Timer>> {
         let items = self.read_set_files().unwrap();
         let index = self.table_state_sets.selected().unwrap();
