@@ -69,7 +69,11 @@ pub fn handle_key_press(
         },
         UiState::SetsUi => match key.code {
             KeyCode::Tab => config.next(),
-            KeyCode::Enter => config.save_table_changes(),
+            KeyCode::Enter => {
+                let timers = config.apply_set().unwrap();
+                config.timers = timers;
+                config.update_timers();
+            }
             KeyCode::Up => config.previous_table_entry(),
             KeyCode::Down => config.next_table_entry(),
             _ => {}

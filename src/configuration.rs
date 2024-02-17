@@ -118,6 +118,19 @@ impl<'a> Configuration<'a> {
         Ok(sets)
     }
 
+    pub fn apply_set(&self) -> std::io::Result<Vec<Timer>> {
+        let items = self.read_set_files().unwrap();
+        let index = self.table_state_sets.selected().unwrap();
+        let name = &items[index];
+
+        let path = Path::new("sets").join(format!("{}", name));
+        let file = std::fs::File::open(&path)?;
+        let reader = std::io::BufReader::new(file);
+        let set: Vec<Timer> = serde_json::from_reader(reader)?;
+        Ok(set)
+    }
+    
+
     pub fn next(&mut self) {
         self.index = (self.index + 1) % self.titles.len();
     }
@@ -259,20 +272,6 @@ impl<'a> Configuration<'a> {
             self.pomodoro_bigbreak_table_str.parse::<u64>().unwrap()
         };
         self.write_config_to_file().unwrap();
-    }
-
-    pub fn apply_set(&mut self) {
-        match self.table_state_config.selected().unwrap() {
-            0 => self.darkmode_str.clear(),
-            1 => self.activecolor_str.clear(),
-            2 => self.reverseadding_str.clear(),
-            3 => self.move_finished_timer_str.clear(),
-            4 => self.action_timeout_str.clear(),
-            5 => self.pomodoro_time_table_str.clear(),
-            6 => self.pomodoro_smallbreak_table_str.clear(),
-            7 => self.pomodoro_bigbreak_table_str.clear(),
-            _ => {}
-        }
     }
 
     pub fn update_timers(&mut self) {
