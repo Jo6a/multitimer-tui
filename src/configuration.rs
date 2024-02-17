@@ -91,7 +91,7 @@ impl<'a> Configuration<'a> {
         std::fs::write("config.json", serde_json::to_string_pretty(self).unwrap())
     }
 
-    pub fn write_set_to_file(&self, set_name : String, set : &Vec<Timer>) -> Result<(), std::io::Error> {
+    pub fn write_set_to_file(&self, set_name : String) -> Result<(), std::io::Error> {
         let path = Path::new("sets");
 
         if !path.exists() {
@@ -99,7 +99,7 @@ impl<'a> Configuration<'a> {
         }
         let file_path = path.join(format!("{set_name}.json"));
         std::fs::write(file_path,
-        serde_json::to_string_pretty(set).unwrap())
+        serde_json::to_string_pretty(&self.timers).unwrap())
     }
 
     pub fn read_set_files(&self) -> std::io::Result<Vec<String>> {
@@ -129,7 +129,6 @@ impl<'a> Configuration<'a> {
         let set: Vec<Timer> = serde_json::from_reader(reader)?;
         Ok(set)
     }
-    
 
     pub fn next(&mut self) {
         self.index = (self.index + 1) % self.titles.len();
@@ -311,7 +310,6 @@ impl<'a> Configuration<'a> {
                 self.timers[i].action_info = action_display.to_string();
             }
         }
-        self.write_set_to_file("testset".to_string(), &self.timers).unwrap();
     }
 
     pub fn add_timer_to_config(&mut self, timer: Timer, reverse_adding: bool) {

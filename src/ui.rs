@@ -69,6 +69,10 @@ pub fn handle_key_press(
         },
         UiState::SetsUi => match key.code {
             KeyCode::Tab => config.next(),
+            KeyCode::Esc => {
+                let files_len = config.read_set_files().unwrap().len();
+                config.write_set_to_file(format!("testset{}", files_len)).unwrap()
+            }
             KeyCode::Enter => {
                 let timers = config.apply_set().unwrap();
                 config.timers = timers;
